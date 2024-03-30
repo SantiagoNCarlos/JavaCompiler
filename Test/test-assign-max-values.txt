@@ -1,0 +1,29 @@
+{
+	*{ Test para comprobar los valores maximos de las variables de tipo long y ushort. }*
+	LONG aaaaaaaaaaaaaaaaaaaaa,
+
+	LONG mine; maxe; novalido,
+	mine = -2147483650_l,
+	maxe = 2147483647_l,
+	novalido = 2147483648_l,
+	novalido = -2147483649_l,
+
+    FLOAT minf; maxf; novalidof,
+
+	minf = -3.40282348E-38,
+	maxf = 3.40282347E+38,
+
+	novalidof = 5.40282347E+200,
+
+    USHORT mins; maxs; novalidos,
+    mins = 0_us,
+    maxs = 255_us,
+	novalidos = 256_us,
+    FLOAT f1; f2,
+
+    f1 = .5,
+    f2 = 1.,
+    novalido = 99999999999999999999999999999999999999999999_l,
+
+    aaaaaaaaaaaaaaaaaaaaa = 4_l,
+}

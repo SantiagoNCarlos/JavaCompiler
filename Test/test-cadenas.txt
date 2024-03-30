@@ -1,0 +1,10 @@
+{
+	*{ Test para comprobar cadenas. }*
+	LONG k,
+	k = 6_l,
+	PRINT # soy una CADENA #,
+	PRINT k,
+	PRINT 8_us,
+	PRINT 6_l,
+}
+

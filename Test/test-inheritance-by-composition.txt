@@ -1,0 +1,42 @@
+{
+    CLASS ca {
+        USHORT a, *{ declaracion de atributo }*
+        VOID m() { *{ declaracion de metodo }*
+            IF (a = 0_us) { *{Esta linea debe dar un error sintactico, no es posible hacer asignaciones en una condicion. }*
+                a = 5_us,
+            }
+            END_IF,
+            RETURN,
+        },
+    }
+
+    CLASS cb {
+        USHORT a, *{ declaracion de atributo }*
+        VOID m() { *{ declaracion de metodo }*
+            IF (a !! 0_us) {
+                a = 5_us,
+            }
+            END_IF,
+            RETURN,
+        },
+    }
+
+    CLASS cc {
+        ca, *{ nombre de la clase }*
+        FLOAT b, *{ declaracion de atributo }*
+        FLOAT a, *{ declaracion de atributo }*
+        cb, *{ nombre de la clase }*
+    }
+
+    *{ declaracion de objetos de una clase }*
+    ca a1; a2,
+    cc b1; b2; b3,
+
+    *{ referencias a metodos y atributos de una clase }*
+    ca.a = 3_us,
+    cb.a = 9_us,
+    cc.b = 1.2,
+    cc.b = b1.a,
+    ca.m(),
+    cb.n(),
+}

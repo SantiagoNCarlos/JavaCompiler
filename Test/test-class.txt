@@ -1,0 +1,43 @@
+{
+	*{ Test para comprobar la creacion de clases. }*
+	CLASS clase2,
+
+    PRINT # AAA123 142 #,
+
+	CHECK FLOAT cc,
+
+	CLASS clase2 {
+		CHECK LONG pp,
+
+		VOID foo2() {
+            CHECK LONG z,
+            z = 2_l,
+            RETURN,
+        },
+	}
+	CHECK LONG k,
+	k = clase2.pp,
+	cc = cc + 1.0,
+
+	FLOAT uu,
+	uu = cc * 9.8,
+	 *{uu++,}*
+	
+	CLASS testclase {
+		CHECK LONG l1;l2,
+
+		VOID foo(){
+			CHECK FLOAT c,
+			c=1.2,
+			RETURN,
+		},
+
+		clase2,
+	}
+	testclase prueba,
+	prueba.foo(),
+
+	IF (uu == cc) {
+	    uu = 5.9,
+	} END_IF,
+}

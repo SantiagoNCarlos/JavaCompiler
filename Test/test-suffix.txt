@@ -1,0 +1,19 @@
+{
+    FLOAT s,
+    USHORT a,
+    LONG k; zz; zzz,
+
+    s=3.e2,
+    s=1.,
+
+    IF ( s<1_us ){
+    	a = -1_us,
+    }
+    END_IF,
+
+    a = -6_us,
+    k = 99999999999_l,
+    s = -1.17549431E-38,
+
+    s = 1.,
+}

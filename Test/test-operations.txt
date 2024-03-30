@@ -1,0 +1,17 @@
+{
+	*{ Test para comprobar operaciones aritmeticas. }*
+	
+	LONG a; b,
+	FLOAT c,
+	FLOAT d,
+
+	a=3_l,
+	b= 8_l,
+	b++,
+	a = a - b,
+	a = a / 2_l,
+	b = 6 * 8,
+	c = -21,
+	d = 3.77E6,
+}
+

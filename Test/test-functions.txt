@@ -1,0 +1,30 @@
+{
+    CHECK FLOAT sub,
+
+    VOID subtract(FLOAT sub){
+
+        CHECK FLOAT c; d,
+        c = -4.324,
+        d = -23.4562,
+        sub = c - d,
+        d = d + sub,
+        RETURN,
+    }
+
+    VOID divide() {
+        CHECK USHORT x;y,
+        x = -3_us,
+        y = 3_us,
+        CHECK FLOAT division,
+        division = x / y,
+        WHILE ( x < 6) DO {
+	    	FLOAT bb,
+	    	bb = 7.77777,
+	    	y = 99_l,
+	    }
+    }
+    d = d + 3,
+    subtract(sub),
+    divide(),
+	sub = 6_l - 3_l,
+}

@@ -1,0 +1,57 @@
+{
+	PRINT #Test para comprobar la funcionalidad de los bloques IF y WHILE#,
+    USHORT s,
+
+    LONG l,
+	l = 432554_l,
+	l = 1_l + 2_l,
+	l++,
+
+    FLOAT h,
+    h=2.,
+    h=h - 2_l,
+
+    LONG k,
+
+    IF (s < 3_l) {
+    	k = 8_l,
+    	h = 4_l,
+    	FLOAT ii,
+    	ii=8.0,
+    }
+    END_IF,
+
+    *{ Se espera un error por falta de parentesis. }*
+    h = 2.,
+
+    WHILE ( l < 6_l) DO {
+    	FLOAT bb,
+    	bb = 7.77777,
+    	h = 99_l,
+    }
+
+    h=7.74,  
+    l=7_l,
+	l = 1_l * 3_l,
+	l = l++ + h++,
+
+	IF ( l < 6 ) {
+	    IF (l > 2) {
+	        l=3,
+	        WHILE ( h > 0.1e3 ) DO {
+	            h = h + 1,
+	        }
+	    }
+	    ELSE {
+	        IF (h !! 0.3)
+	            RETURN,
+	        END_IF,
+	    }
+	    END_IF,
+	}
+	END_IF,
+
+	*{ Se espera un error por falta de sentencia. 
+	WHILE (3_l<6_l) DO }*
+}
+

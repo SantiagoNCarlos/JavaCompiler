@@ -1,0 +1,7 @@
+{
+	LONG k,
+	k= 3_l,
+	PRINT k,
+	k= 1_l + 8_l,
+	PRINT k,
+}
