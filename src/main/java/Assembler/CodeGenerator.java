@@ -21,7 +21,7 @@ public class CodeGenerator {
             case "/" -> DivConstructor.generateStructureCode(node);
             case "==" , "<=" , ">=" , "<" , ">" , "!!" -> ConditionConstructor.generateStructureCode(node);
             case "THEN", "ELSE" -> IfConstructor.generateStructureCode(node);
-//            case "while" -> new ;
+            case "while" -> WhileConstructor.generateStructureCode(node);
 //            case "acceso" -> new ;
 //            case "llamadoFuncion" -> new ;
             case "Print" -> PrintConstructor.generateStructureCode(node);

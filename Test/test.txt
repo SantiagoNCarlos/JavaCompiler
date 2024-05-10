@@ -1,7 +1,13 @@
 {
-	LONG k,
-	k= 3_l,
-	PRINT k,
-	k= 1_l + 8_l,
-	PRINT k,
+
+    USHORT a;b;c;d,
+    a = 3_us,
+    b = 6_us,
+    c = 9_us,
+    d = 1_us,
+
+	WHILE ( a + b <= c - d ) DO {
+        a = b + c,
+        c = d + 1_us,
+    },
 }

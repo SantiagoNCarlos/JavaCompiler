@@ -38,7 +38,7 @@ public class AddConstructor implements CodeConstructor{
                 case UsesType.FLOAT -> {
                     returnCode = "    FLD " + leftNodeToken.replace(".", "_") + "\n" + // Load left node to FPU stack
                             "    FLD " + rightNodeToken.replace(".", "_") + "\n" + // Load right node to FPU stack
-                    		"    FADD\n" + // Divide...
+                    		"    FADD\n" + // Add...
                             "    FSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
                 }
             };
