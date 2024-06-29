@@ -2,7 +2,7 @@ package ArbolSintactico;
 
 import ArbolSintactico.SyntaxNode;
 
-/** Clase para mostrar el árbol sintáctico */
+/** Clase para mostrar el ï¿½rbol sintï¿½ctico */
 public class SyntaxTreeVisualizer {
 
     private final SyntaxNode rootNode;
@@ -11,7 +11,7 @@ public class SyntaxTreeVisualizer {
         this.rootNode = rootNode;
     }
 
-    // Recorre el árbol en preorden
+    // Recorre el ï¿½rbol en preorden
     public String traversePreOrder(SyntaxNode rootNode) {
         if (rootNode == null) {
             return "";
@@ -29,7 +29,7 @@ public class SyntaxTreeVisualizer {
         return textBuilder.toString();
     }
 
-    // Método para navegar y visualizar la estructura del árbol
+    // Mï¿½todo para navegar y visualizar la estructura del ï¿½rbol
     public void navigateTree(StringBuilder textBuilder, String padding, String arrow, SyntaxNode node, boolean hasRightSibling) {
 
         if (node != null) {
@@ -44,7 +44,7 @@ public class SyntaxTreeVisualizer {
             StringBuilder paddingBuilder = new StringBuilder(padding);
 
             if (hasRightSibling) {
-                paddingBuilder.append("|  ");  // Añade una rama
+                paddingBuilder.append("|  ");  // Aï¿½ade una rama
             } else {
                 paddingBuilder.append("   ");
             }
@@ -57,4 +57,6 @@ public class SyntaxTreeVisualizer {
             navigateTree(textBuilder, bothPadding, rightArrow, node.getRightChild(), false);
         }
     }
+
+
 }

@@ -8,27 +8,25 @@ import java.util.Optional;
 
 public class PrintConstructor implements CodeConstructor {
     public static String generateStructureCode(SyntaxNode node) {
-        Optional<Attribute> childNode = node.getLeftChild().getNodeValue();
-        if (childNode.isPresent()) {
-            Attribute attribute = childNode.get();
-            String token = attribute.getToken();
-            String type = attribute.getType();
+		SyntaxNode leftChild = node.getLeftChild();
 
-            node.setLeftChild(null);
-            node.setRightChild(null);
-            node.setLeaf(true);
+		final String leftNodeToken = CodeConstructor.getToken(leftChild);
+        final String type = leftChild.getType();
 
-            return generatePrintCode(token, type);
-        }
-        return "";
-    }
+        node.setLeftChild(null);
+        node.setRightChild(null);
+        node.setLeaf(true);
+
+		return generatePrintCode(leftNodeToken, type);
+	}
 
     private static String generatePrintCode(String token, String type) {
+        System.out.println(token + " " + type);
         return switch (type) {
-            case UsesType.LONG -> "    invoke printf, offset formatStringLong, " + token.replace(":", "_") + "\n";
-            case UsesType.USHORT -> "    invoke printf, offset formatStringUShort, " + token.replace(":", "_") + "\n";
-            case UsesType.FLOAT -> "    invoke printf, offset formatStringFloat, " + token.replace(":", "_") + "\n";
-            case UsesType.CADENA -> "    invoke printf, addr " + token + "\n"; // Asumiendo que 'token' es una cadena de caracteres
+            case UsesType.LONG -> "\tinvoke printf, offset formatStringLong, " + token.replace(":", "_") + "\n";
+            case UsesType.USHORT -> "\tinvoke printf, offset formatStringUShort, " + token.replace(":", "_") + "\n";
+            case UsesType.FLOAT -> "\tinvoke printf, offset formatStringFloat, " + token.replace(":", "_") + "\n";
+            case UsesType.CADENA -> "\tinvoke printf, addr " + token + "\n"; // Asumiendo que 'token' es una cadena de caracteres
             default -> "";
         };
     }

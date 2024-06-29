@@ -6,13 +6,13 @@ import Assembler.CodeGenerator;
 public class WhileConstructor implements CodeConstructor {
 
     public static String generateStructureCode(SyntaxNode node) {
-        final String labelName = " label" + CodeGenerator.codeLabelsCounter;
 
-        String returnCode = "JMP " + labelName + "\n" + "label" + CodeGenerator.labelCountStack.peek() + ":\n";
+//        System.out.println("WHILE:\t" + CodeGenerator.codeLabelsCounter + "\t" + CodeGenerator.labelCountStack);
 
-        CodeGenerator.labelCountStack.pop();
-        CodeGenerator.labelCountStack.push(CodeGenerator.codeLabelsCounter);
-        CodeGenerator.codeLabelsCounter++;
+        final String labelName = "\tlabel" + CodeGenerator.labelCountStack.pop();
+        final String labelName2 = " label" + CodeGenerator.labelCountStack.pop();
+
+        String returnCode = "\tJMP" + labelName2 + "\n" + labelName + ":\n";
 
         node.setLeftChild(null);
         node.setRightChild(null);

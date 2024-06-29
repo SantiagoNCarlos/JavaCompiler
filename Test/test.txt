@@ -1,13 +1,106 @@
 {
-
     USHORT a;b;c;d,
-    a = 3_us,
+
     b = 6_us,
     c = 9_us,
     d = 1_us,
 
-	WHILE ( a + b <= c - d ) DO {
+    FLOAT x,
+
+    CLASS persona {
+        USHORT edad,
+        FLOAT o,
+        
+        VOID actualizar(FLOAT u) {
+            u = u + 1_us,
+            RETURN,
+        },
+
+        VOID actualizar2() {
+            edad = edad + 1_us,
+            RETURN,
+        },
+    }
+
+    VOID actualizar(FLOAT u) {
+        u = u + 1_us,
+        RETURN,
+    },
+
+    persona p,
+
+    x++,
+
+   p.actualizar(p.o),
+
+
+    *{
+          `-->Acceso FLOAT
+         |-->p Clase
+         `-->o FLOAT
+
+    `-->LlamadoFuncion FUNCION      -->  actualizar(p.o),
+      |-->actualizar:global
+      `-->parametro
+         `-->Acceso FLOAT
+            |-->p Clase
+            `-->o FLOAT
+
+    Probar porque no andan! -- > NO generan nodos...
+        p.actualizar(p.o), // chequear tambien conversiones implicitas en llamados a metodos!
+    }*
+
+
+}
+
+
+
+
+
+
+
+
+
+
+    *{
+
+        persona h,
+    h.o = 3_us,
+
+    edad:global:persona: Attribute [tokenID=257, token=edad:global:persona, type=USHORT, line=9, uso=VAR, esCheck=false, ambitosUsoIzquierdo=[global:persona:actualizar], usadaDerecho=false]
+
+            persona p,
+
+    p.actualizar(),
+
+        VOID func() {
+        a = 3_us,
+        RETURN,
+    },
+
+    func(),
+
+
+	WHILE ( a + b == c - d ) DO {
         a = b + c,
         c = d + 1_us,
+        WHILE ( a + b == c - d ) DO {
+            a = b + c,
+            c = d + 1_us,
+            IF (a - b > c + 1_us) {
+                a = b + c,
+            }
+            END_IF,
+        },
     },
-}
+
+    IF (a > 1_us) {
+        c = 3_us,
+        IF (a > 7_us) {
+            b = 2_us,
+        }
+        END_IF,
+    }
+    ELSE
+        a = b - c,
+    END_IF,}*

@@ -9,23 +9,28 @@ import java.util.Stack;
 public class CodeGenerator {
     public static int auxVariableCounter = 1;
     public static int codeLabelsCounter = 1;
-    public static Stack<Integer> labelCountStack = new Stack<Integer>();
-//    public static int currectCodeLabelNum = 1;
+    public static Stack<Integer> labelCountStack = new Stack<>();
+    public static Stack<Boolean> enviromentCountStack = new Stack<>();
+    public static Stack<String> functionsLabelsStack = new Stack<>();
 
     public static String generateNodeCode(SyntaxNode node) {
-        return switch (node.getName()) {
+
+        final String nodeName = node.getName();
+
+        return switch (nodeName.toLowerCase()) {
             case "++", "+" -> AddConstructor.generateStructureCode(node);
             case "=" -> AssignConstructor.generateStructureCode(node);
             case "-" -> SubConstructor.generateStructureCode(node);
             case "*" -> MulConstructor.generateStructureCode(node);
             case "/" -> DivConstructor.generateStructureCode(node);
             case "==" , "<=" , ">=" , "<" , ">" , "!!" -> ConditionConstructor.generateStructureCode(node);
-            case "THEN", "ELSE" -> IfConstructor.generateStructureCode(node);
+            case "then", "else" -> IfConstructor.generateStructureCode(node);
             case "while" -> WhileConstructor.generateStructureCode(node);
-//            case "acceso" -> new ;
-//            case "llamadoFuncion" -> new ;
-            case "Print" -> PrintConstructor.generateStructureCode(node);
-            default -> node.getName();
+            case "llamadofuncion" -> FunctionCallerConstructor.generateStructureCode(node);
+            case "llamadometodoclase" -> MethodCallerConstructor.generateStructureCode(node);
+            case "print" -> PrintConstructor.generateStructureCode(node);
+            default -> nodeName.contains("DeclaracionFuncion") ? "\tRET \n\t" + functionsLabelsStack.pop() + " ENDP" : "";
+
         };
     }
 }

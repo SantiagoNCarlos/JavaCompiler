@@ -6,26 +6,28 @@ import Assembler.CodeGenerator;
 public class IfConstructor implements CodeConstructor {
 
     public static String generateStructureCode(SyntaxNode node) {
-//        Optional<Attribute> leftNode = node.getLeftChild().getNodeValue();
-//        Optional<Attribute> rightNode = node.getRightChild().getNodeValue();
         String returnCode = null;
 
         switch (node.getName()) {
-            case "THEN": {
-                final String labelName = " label" + CodeGenerator.codeLabelsCounter;
+            case "THEN":
+                final String labelName = "\tlabel" + CodeGenerator.labelCountStack.pop();
 
-                returnCode = "JMP " + labelName + "\n" + "label" + CodeGenerator.labelCountStack.peek() + ":\n";
+                if (CodeGenerator.enviromentCountStack.pop()) { // Cases where we have an "ELSE" sentence
 
-                CodeGenerator.labelCountStack.pop();
-                CodeGenerator.labelCountStack.push(CodeGenerator.codeLabelsCounter);
-                CodeGenerator.codeLabelsCounter++;
+                    CodeGenerator.labelCountStack.push(CodeGenerator.codeLabelsCounter);
+                    CodeGenerator.codeLabelsCounter++;
 
-            }
-            case "ELSE": {
-                returnCode = "label" + CodeGenerator.labelCountStack.peek() + ":\n";
-                CodeGenerator.labelCountStack.pop();
-            }
-        };
+                    final String elseLabelName = "label" + CodeGenerator.labelCountStack.peek();
+                    returnCode = "\tJMP " + elseLabelName + "\n" + labelName + ":\n";
+                } else {
+                    returnCode = labelName + ":\n";
+                }
+
+                break;
+            case "ELSE":
+                returnCode = "\tlabel" + CodeGenerator.labelCountStack.pop() + ":\n";
+                break;
+        }
 
         node.setLeftChild(null);
         node.setRightChild(null);

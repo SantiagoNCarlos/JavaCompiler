@@ -4,8 +4,9 @@ import java.util.Optional;
 
 import AnalizadorLexico.Attribute;
 import AnalizadorLexico.SymbolTable;
+import Assembler.SentenceConstructors.AccessConstructor;
 
-/** Clase Nodo del árbol que conserva el nombre, el tipo y si es una hoja */
+/** Clase Nodo del ï¿½rbol que conserva el nombre, el tipo y si es una hoja */
 public class SyntaxNode {
     private String name;
     private SyntaxNode leftChild;
@@ -102,10 +103,11 @@ public class SyntaxNode {
     public Optional<Attribute> getNodeValue() {
     	SymbolTable table = SymbolTable.getInstance();
 //    	System.out.println("busco x" + this.name);
-    	var entrada = table.getAttribute(this.name);
+        var entrada = table.getAttribute(this.name);
+
     	if (entrada.isPresent())
     		return entrada;
-//    	System.out.println("dio null");
+//    	System.out.println(entrada);
     	return null;
     }
 }

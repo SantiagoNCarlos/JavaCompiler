@@ -11,4 +11,5 @@ public final class UsesType {
     public static final String CADENA = "CADENA";;
     public static final String CLASE = "CLASE";
     public static final String AUX_VAR = "AUX_VAR";
+    public static final String CLASS_VAR = "CLASS_VAR";
 }

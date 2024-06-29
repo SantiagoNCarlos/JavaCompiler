@@ -12,6 +12,7 @@ public class Attribute {
     boolean esCheck = false;
     Set<String> ambitosUsoIzquierdo = new HashSet<>();
     boolean usadaDerecho = false;
+	private Attribute parameter = null;
     
     public Attribute(String token, int id) {
     	this.token = token;
@@ -121,6 +122,14 @@ public class Attribute {
 
 	public void setLine(int line) {
 		this.line = line;
+	}
+
+	public void setParameter(Attribute parameter) {
+		this.parameter = parameter;
+	}
+
+	public Attribute getParameter() {
+		return parameter;
 	}
 
 	@Override

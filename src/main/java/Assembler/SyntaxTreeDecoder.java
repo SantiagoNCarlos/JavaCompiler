@@ -2,30 +2,54 @@ package Assembler;
 
 import ArbolSintactico.SyntaxNode;
 
+import java.util.Objects;
+
 // Reads the whole syntax tree and decodes it.
 public class SyntaxTreeDecoder {
 
     private static boolean error = false;
     public static final CodeWriter assemblerWriter = CodeWriter.getInstance();
 
-//    public static void exploreTree(SyntaxNode fatherNode) { // capaz habria que hacer algo mas aca...
-//        processNode(fatherNode);
-//    }
-
     public static void processNode(SyntaxNode fatherNode) {
         if (fatherNode != null && !fatherNode.isLeaf()) {
+            final String fatherNodeName = fatherNode.getName();
+
+            addLabel(fatherNodeName);
+
             if (isLastParentNode(fatherNode)) {
                 generateAndPrintCode(fatherNode);
             } else {
-                processNode(fatherNode.getRightChild());
-                processNode(fatherNode.getLeftChild());
 
-//                if (fatherNode.getLeftChild() != null && !fatherNode.getLeftChild().isLeaf())
-//                    processNode(fatherNode.getLeftChild());
-//
-//                if (fatherNode.getRightChild() != null && !fatherNode.getRightChild().isLeaf())
-//                    processNode(fatherNode.getRightChild());
+                final String[] parts = fatherNodeName.split("=", 2); // Limitamos a 2 partes
+
+                switch (parts[0].toLowerCase()) {
+                    case "if" -> CodeGenerator.enviromentCountStack.push(false);
+                    case "camino" -> {
+                        CodeGenerator.enviromentCountStack.pop();
+                        CodeGenerator.enviromentCountStack.push(true);
+                    }
+                    case "declaracionfuncion" -> {
+                        final String funcName = parts.length > 1 ? parts[1] : "";
+                        CodeGenerator.functionsLabelsStack.push("FUNCTION_" + funcName.replace(':', '_'));
+
+                        assemblerWriter.addSentence("\t" + CodeGenerator.functionsLabelsStack.peek() + " PROC");
+                    }
+                }
+
+                processNode(fatherNode.getLeftChild());
+                processNode(fatherNode.getRightChild());
+                generateAndPrintCode(fatherNode);
             }
+        }
+    }
+
+    private static void addLabel(String nodeName) {
+        if (Objects.equals(nodeName.toLowerCase(), "while")) {
+            final String labelName = "\tlabel" + CodeGenerator.codeLabelsCounter + ":";
+            assemblerWriter.addSentence(labelName);
+
+            CodeGenerator.labelCountStack.push(CodeGenerator.codeLabelsCounter);
+            CodeGenerator.codeLabelsCounter++;
         }
     }
 
@@ -44,6 +68,5 @@ public class SyntaxTreeDecoder {
             assemblerWriter.addSentence(generatedCode);
         }
     }
-
 
 }

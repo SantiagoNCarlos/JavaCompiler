@@ -36,7 +36,7 @@ programa:
 bloque:
             sentencia { $$ = $1; }
             | bloque sentencia { if ((SyntaxNode) $2.obj != null)
-            							$$ = new ParserVal(new SyntaxNode("Bloque de sentencias", (SyntaxNode) $2.obj, (SyntaxNode) $1.obj)); }
+            							$$ = new ParserVal(new SyntaxNode("Bloque de sentencias", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj)); }
             
             
       		| definicion_class {$$ = $1;}
@@ -177,12 +177,34 @@ asignacion:
                             }
                         }
                     }
+                    else {
+	                    yyerror("La variable declarada '" + $1.sval+ "' no existe");
+                    }
             }
 			| ID '=' error {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una expresion aritmética");
             }
 			| acceso '=' expresion_aritmetica {
                     logger.logDebugSyntax("Asignación en la linea " + LexicalAnalyzer.getLine());
+
+                    SyntaxNode accessNode = (SyntaxNode) $1.obj;
+                    SyntaxNode rightSyntaxNode = (SyntaxNode) $3.obj;
+
+                    String tipo_validado = validarTipos(accessNode, rightSyntaxNode, true);
+
+                    if (!tipo_validado.equals("Error")) {
+                        var asign = new SyntaxNode("=", accessNode, rightSyntaxNode);
+                        asign.setType(tipo_validado);
+                        $$ = new ParserVal(asign);
+
+/*
+                        var t = SymbolTable.getInstance();
+
+                        var entrada = t.getAttribute(getNameSymbolTableVariables(accessNode.getRI));
+                        if (entrada.isPresent()) {
+                            entrada.get().addAmbito(ambito);
+                        } */
+                    }
             }
 			| acceso '=' error {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una expresion aritmética");
@@ -417,9 +439,9 @@ factor:
                         var type = getTypeSymbolTableVariables($1.sval);
                         var name = getNameSymbolTableVariables($1.sval);
 
-                        if (!type.equals("Error") && !name.equals("Error"))
-                            $$ =  new ParserVal( new SyntaxNode(name, type));
-                        else{
+                        if (!type.equals("Error") && !name.equals("Error")) {
+                            $$ =  new ParserVal(new SyntaxNode(name, type));
+                        } else{
                           //  $$ =  new ParserVal( new SyntaxNode("parametroNoEncontrado", type));
                             yyerror("No se encontro esta variable en un ambito adecuado");}
             }
@@ -520,7 +542,7 @@ declaracion_void:
             header_void '{' bloque_void '}' {
                     logger.logDebugSyntax("VOID en la linea " + LexicalAnalyzer.getLine());
                     String nombreFuncion = $1.sval;
-                    arbolFunciones.add(new SyntaxNode("Raiz de la funcion: " + nombreFuncion, (SyntaxNode) $3.obj, null));
+                    arbolFunciones.add(new SyntaxNode("DeclaracionFuncion=" + nombreFuncion, (SyntaxNode) $3.obj, null));
                     checkFlagAmbito();
             }
             | header_void '{' bloque_void error {
@@ -551,9 +573,16 @@ header_void:
 		            SyntaxNode parametroNode = (SyntaxNode) $4.obj;
 		            String nombreParametro = parametroNode.getName();
 		            String tipoParametro = parametroNode.getType();
-		            t.insertAttribute(new Attribute(Parser.ID, nombreParametro + ":" + Parser.ambito + ":" + $2.sval, tipoParametro, UsesType.FUNCTION, LexicalAnalyzer.getLine()));
+
+		            Attribute attr = new Attribute(Parser.ID, nombreParametro + ":" + Parser.ambito + ":" + $2.sval, tipoParametro, UsesType.PARAMETER, LexicalAnalyzer.getLine());
+		            t.insertAttribute(attr);
+
+		            var entradaFuncionInsertada = t.getAttribute($2.sval + ":" + Parser.ambito);
+		            entradaFuncionInsertada.get().setParameter(attr);
 		        }
-		
+
+                String nombreFuncionSyntaxNode = $2.sval + ":" + Parser.ambito;
+                $$.sval = nombreFuncionSyntaxNode;
 		        nuevoAmbito($2.sval);
 		    }
             | VOID ID '(' ')' {
@@ -722,8 +751,13 @@ bloque_sentencias_condicion_void:
 /*********** CLASSES ***********/
 definicion_class:
             header_class '{' bloque_class '}' { 
-            		$$ = $3;
-            		eliminarAmbito(); // Restaura el ámbito anterior al salir de la clase
+            		//$$ = $3;
+
+                    //String nombreClase = $1.sval;
+                    //arbolFunciones.add(new SyntaxNode("DeclaracionClass=" + nombreClase, (SyntaxNode) $3.obj, null));
+                    //checkFlagAmbito();
+
+                    eliminarAmbito(); // Restaura el ámbito anterior al salir de la clase
             		}
             | header_class '{' bloque_class error {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un }.");}
             | forward_declaration
@@ -743,6 +777,8 @@ header_class:
 		        tablaSimbolos.insertAttribute(new Attribute(Parser.ID, nombreClase, "Clase", UsesType.CLASE, LexicalAnalyzer.getLine()));
 		
 		        nuevoAmbito($2.sval); /* Agrega el nuevo Ã¡mbito de la clase*/
+
+                $$.sval = nombreClase;
 		    }
             | CLASS error{logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el ID");}
             ;
@@ -759,18 +795,22 @@ sentencias_class:
             ;
 
 bloque_class:
-            bloque_class sentencias_class ','
-
+            bloque_class sentencias_class ',' {
+               if ((SyntaxNode) $2.obj != null)
+                    $$ = new ParserVal(new SyntaxNode("BloqueClass", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
+            }
             | bloque_class sentencias_class error {
                                                 logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','.");
                                              }
             | bloque_class declaracion_void ',' {
-                                                    }
+                if ((SyntaxNode) $2.obj != null)
+                    $$ = new ParserVal(new SyntaxNode("BloqueClass", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
+            }
             | bloque_class declaracion_void error {
                                                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','.");
                                                    }
 		    | bloque_class definicion_class {
-		        $$ = new ParserVal(new SyntaxNode("Bloque de sentenci7as" , (SyntaxNode) $2.obj, (SyntaxNode) $1.obj));
+		        $$ = new ParserVal(new SyntaxNode("BloqueClase" , (SyntaxNode) $2.obj, (SyntaxNode) $1.obj));
 		    }
 		    | sentencias_class ',' {$$ = $1;}
 		    | sentencias_class error {
@@ -785,20 +825,30 @@ inheritance_by_composition:
 
 declaracion_var_class:
 			ID lista_de_variables {
-			                            logger.logDebugSyntax("Declaración 3de variables en la linea " + LexicalAnalyzer.getLine());
-			                                    if (!esTipoClaseValido($1.sval)) {
-										            yyerror("Tipo de clase no declarado: " + $1.sval);
-										        }
-										        else {
-								                    var t = SymbolTable.getInstance();
-								                    String tipoVariable = $1.sval;
-								                    for (String varName : lista_variables) {
-								                        String nombreCompleto = varName;
-                            							t.insertAttribute(new Attribute(Parser.ID, nombreCompleto, tipoVariable, UsesType.VARIABLE, LexicalAnalyzer.getLine()));
-													}
-                    								lista_variables.clear();
-										        }
-			                          }
+                    logger.logDebugSyntax("Declaración 3de variables en la linea " + LexicalAnalyzer.getLine());
+                    if (!esTipoClaseValido($1.sval)) {
+                        yyerror("Tipo de clase no declarado: " + $1.sval);
+                    }
+                    else {
+                        var t = SymbolTable.getInstance();
+                        String tipoVariable = $1.sval;
+                        for (String varName : lista_variables) {
+                            String nombreCompleto = varName;
+                            var entrada = t.getAttribute(nombreCompleto);
+                            if (entrada.isPresent()) {
+                                if (entrada.get().getType() == null) {
+                                    entrada.get().setUso(UsesType.VARIABLE);
+                                    entrada.get().setType(tipoVariable); // Asigna el tipo correcto
+                                } else {
+                                    yyerror("La variable declarada ya existe " + (varName.contains(":") ? varName.substring(0, varName.indexOf(':')) : "en ambito global"));
+                                }
+                            } else {
+                                t.insertAttribute(new Attribute(Parser.ID, nombreCompleto, tipoVariable, UsesType.CLASS_VAR, LexicalAnalyzer.getLine()));
+                            }
+                        }
+                        lista_variables.clear();
+                    }
+                  }
 			;
 
 acceso:
@@ -807,12 +857,13 @@ acceso:
 
 		        String varType = getTypeSymbolTableVariablesEnAcceso($3.sval, $1.sval);
 
-		        SyntaxNode objetoNode = new SyntaxNode($1.sval, "Clase");
-
 		        if (!varType.equals("Error")) {
+		            SyntaxNode objetoNode = new SyntaxNode($1.sval, "Clase");
 		            SyntaxNode propiedadNode = new SyntaxNode($3.sval, varType);
 		            SyntaxNode accesoNode = new SyntaxNode("Acceso", objetoNode, propiedadNode, varType);
 		            $$ = new ParserVal(accesoNode);
+		        } else {
+		            yyerror("La variable " + $1.sval + " no fue declarada.");
 		        }
 
 		    }
@@ -830,16 +881,44 @@ llamada:
         				String nombreMetodo = getNameSymbolTableVariables($1.sval);
                         if (!nombreMetodo.equals("Error")) {
 				            if (metodoExiste(Parser.ambito, nombreMetodo)) {
-				            	SyntaxNode llamadaSyntaxNode = new SyntaxNode("LlamadoMetodo", new SyntaxNode(nombreMetodo));
+				            	SyntaxNode llamadaSyntaxNode = new SyntaxNode("LlamadoFuncion", new SyntaxNode(nombreMetodo));
 				                logger.logDebugSyntax("Llamado a método en la linea " + LexicalAnalyzer.getLine());
                         		$$ = new ParserVal(llamadaSyntaxNode);
-				            	
-				            } else {
-				                yyerror("Error en la línea " + LexicalAnalyzer.getLine() + ": El método " + nombreMetodo + " no existe " );
-				            }
 
+				            	checkFunctionCall(nombreMetodo);
+				            } else {
+				                yyerror("Error en la línea " + LexicalAnalyzer.getLine() + ": El método " + $1.sval + " no existe " );
+				            }
                         }
 		    }
+            | ID '(' factor ')' {
+   			        //    SyntaxNode node = (SyntaxNode) val_peek(1).obj;
+   			            logger.logDebugSyntax("Llamado en la linea " + LexicalAnalyzer.getLine());
+   			            SyntaxNode node = (SyntaxNode) $3.obj;
+
+                        if (node != null){ //  && node.isLeaf()
+                            String nombreMetodo = getNameSymbolTableVariables($1.sval);
+                            //String nombreCompleto = getNameSymbolTableVariables(node.getName());
+
+                            if (!nombreMetodo.equals("Error")) {
+                                if (metodoExiste(Parser.ambito, nombreMetodo)) {
+
+                                    SyntaxNode llamadaSyntaxNode = new SyntaxNode("LlamadoFuncion",
+                                                                                    new SyntaxNode(nombreMetodo),
+                                                                                    new SyntaxNode("parametro", (SyntaxNode) $3.obj, null),
+                                                                                    getTypeSymbolTableVariables($1.sval));
+                                    logger.logDebugSyntax("Llamado a método en la linea " + LexicalAnalyzer.getLine());
+                                    $$ = new ParserVal(llamadaSyntaxNode);
+
+                                    checkFunctionCall(nombreMetodo, ((SyntaxNode) $3.obj).getType());
+                                } else {
+                                    yyerror("Error en la línea " + LexicalAnalyzer.getLine() + ": El método " + $1.sval + " no existe " );
+                                }
+                            }
+                        } else {
+                            yyerror("Error en la línea " + LexicalAnalyzer.getLine() + ": Parametro inexistente." );
+                        }
+            }
 		    | ID '.' ID '(' ')' {
                         //SyntaxNode llamadaSyntaxNode = new SyntaxNode("LlamadoFuncion", new SyntaxNode($1.sval), (SyntaxNode)$3.obj);
 				        String nombreInstancia = getNameSymbolTableVariables($1.sval);
@@ -851,15 +930,39 @@ llamada:
 				                SyntaxNode llamadaSyntaxNode = new SyntaxNode("LlamadoMetodoClase", new SyntaxNode(nombreInstancia), new SyntaxNode(nombreMetodo));
 				                logger.logDebugSyntax("Llamado a método de clase en la linea " + LexicalAnalyzer.getLine());
 				                $$ = new ParserVal(llamadaSyntaxNode);
+
+				                checkFunctionCall(nombreMetodo);
 				            } else {
 				                yyerror("Error en la línea " + LexicalAnalyzer.getLine() + ": El método " + nombreMetodo + " no existe en la clase " + tipoClase);
 				            }
-				        } else {
-				            yyerror("Error en la línea " + LexicalAnalyzer.getLine() + ": " + nombreInstancia + " no es una instancia de una clase.");
 				        }
 		    }
-			;
+		    | ID '.' ID '(' factor ')' {
+				        logger.logDebugSyntax("Llamado en la linea " + LexicalAnalyzer.getLine());
+   			            SyntaxNode node = (SyntaxNode) $5.obj;
 
+                        if (node != null){ //  && node.isLeaf()
+                            final String nombreInstancia = getNameSymbolTableVariables($1.sval);
+                            final String tipoClase = getTypeSymbolTableVariables(nombreInstancia);
+
+                            if (!tipoClase.equals("Error")) {
+                                // Verificar si el método existe en la clase
+                                String nombreMetodo = $3.sval;
+                                if (metodoExisteEnClase(tipoClase, nombreMetodo)) {
+                                    SyntaxNode llamadaSyntaxNode = new SyntaxNode("LlamadoMetodoClase",
+                                                                                new SyntaxNode(nombreInstancia),
+                                                                                new SyntaxNode(nombreMetodo, new SyntaxNode("parametro", node, null), null),
+                                                                                getTypeSymbolTableVariables($1.sval));
+                                    logger.logDebugSyntax("Llamado a método de clase en la linea " + LexicalAnalyzer.getLine());
+                                    $$ = new ParserVal(llamadaSyntaxNode);
+                                    checkFunctionCall(nombreMetodo, node.getType());
+                                } else {
+                                    yyerror("Error en la línea " + LexicalAnalyzer.getLine() + ": El método " + nombreMetodo + " no existe en la clase " + tipoClase);
+                                }
+				            }
+                        }
+		    }
+			;
 /********** PRINT ***********/
 
 impresion:
@@ -905,7 +1008,7 @@ private boolean metodoExiste(String tipoClase, String nombreMetodo) {
         if (attribute.getUso().equals(UsesType.FUNCTION) && attribute.getToken().contains(tipoClase)) {
             // Extraer el nombre del mÃ©todo del token
             String metodo = attribute.getToken();
-            System.out.println("comparo: " + metodo + " con " + nombreMetodo + "mi ambito es: " + Parser.ambito);
+            //System.out.println("comparo: " + metodo + " con " + nombreMetodo + "mi ambito es: " + Parser.ambito);
             // Verificar si el nombre del mÃ©todo coincide con el nombre del mÃ©todo buscado
             if (metodo.equals(nombreMetodo)) {
                 return true;
@@ -1072,14 +1175,16 @@ private String getTypeSymbolTableVariables(String sval) {
     }
     // Si llegamos aquí, significa que no se encontró el tipo de la variable
     if (!falloNombre(sval)) {
-		yyerror("El tipo de la variable no fue hallado en un ámbito apropiado");
+		yyerror("La variable o funcion no fue hallada en el ambito actual.");
     }
     return "Error";
 }
 
 private String getTypeSymbolTableVariablesEnAcceso(String sval, String sval2) {
-    String ambitoActual = ":" + Parser.ambito;
-    String nombreCompleto = sval + ambitoActual + ":" +sval2;
+    final String objectType = getTypeSymbolTableVariables(sval2);
+    final String ambitoActual = ":" + Parser.ambito;
+    String nombreCompleto = sval + ambitoActual + ":" + objectType;
+
     while (!nombreCompleto.isEmpty()) {
         String tipo = valorSimbolo(nombreCompleto);
         if (!tipo.equals("Error")) {
@@ -1094,7 +1199,7 @@ private String getTypeSymbolTableVariablesEnAcceso(String sval, String sval2) {
     }
     // Si llegamos aquí, significa que no se encontró el tipo de la variable
     if (!falloNombre(sval)) {
-		yyerror("El tipo de la variable no fue hallado en un ámbito apropiado");
+		yyerror("La variable o funcion no es reconocible en el ambito actual.");
     }
     return "Error";
 }
@@ -1129,7 +1234,7 @@ private String getNameSymbolTableVariables(String sval) {
         }
     }
     // Si llegamos aquí, significa que no se encontró la variable
-    yyerror("El tipo de la variable '" + sval + "' no fue hallado en un ámbito apropiado");
+    yyerror("La variable o funcion '" + sval + "' no es reconocible en el ambito actual.");
     return "Error";
 }
 
@@ -1266,4 +1371,34 @@ public static int yylex() {
        }
     }
     return tokenID;
+}
+
+public static void checkFunctionCall(String funcName) {
+
+    var funcAttr = SymbolTable.getInstance().getAttribute(funcName);
+
+    if (funcAttr.isPresent()) {
+      var paramAttr = funcAttr.get().getParameter();
+
+      if (paramAttr != null)
+        yyerror("Faltan parametros para llamar a esta funcion.");
+    }
+}
+
+public static void checkFunctionCall(String funcName, String parameterName) {
+    for (Map.Entry<String, Attribute> functionVariable : SymbolTable.getTableMap().entrySet()) {
+      if (functionVariable.getKey().startsWith(funcName + ":")) {
+        var funcAttr = functionVariable.getValue();
+        var paramAttr = funcAttr.getParameter();
+        var paramEntry = SymbolTable.getInstance().getAttribute(parameterName);
+
+        if (paramAttr != null) {
+          if (paramEntry.isPresent() && !paramAttr.getType().equals( paramEntry.get().getType() )) {
+              yyerror("El parametro es del tipo incorrecto.");
+          }
+        } else {
+            yyerror("Esta funcion no admite el pasaje de parametros.");
+        }
+      }
+    }
 }

@@ -11,49 +11,44 @@ import java.util.Optional;
 
 public class MulConstructor implements CodeConstructor {
     public static String generateStructureCode(SyntaxNode node) {
-        Optional<Attribute> leftNode = node.getLeftChild().getNodeValue();
-        Optional<Attribute> rightNode = node.getRightChild().getNodeValue();
-        if (leftNode.isPresent() && rightNode.isPresent()) {
-            String leftNodeToken = leftNode.get().getToken();
-            String rightNodeToken = rightNode.get().getToken();
-            if (leftNode.get().getUso().equals("CTE"))
-            	leftNodeToken = "c_".concat(leftNodeToken);
-            if (rightNode.get().getUso().equals("CTE"))
-            	rightNodeToken = "c_".concat(rightNodeToken);
-            String returnCode = null;
+		SyntaxNode leftChild = node.getLeftChild();
+		SyntaxNode rightChild = node.getRightChild();
 
-            final String auxVariableName = "@aux" + CodeGenerator.auxVariableCounter;
-            CodeGenerator.auxVariableCounter++;
+		String leftNodeToken = CodeConstructor.getToken(leftChild);
+		String rightNodeToken = CodeConstructor.getToken(rightChild);
 
-            switch (node.getType()) {
-                case UsesType.USHORT -> {
-                    returnCode = "    MOV AL, " + leftNodeToken + "\n" +
-                                "    MUL AL, " + rightNodeToken + "\n" +
-                                "    MOV " + auxVariableName + ",AL"; // Store the 8 bit USHORT mul in aux variable.
-                }
-                case UsesType.LONG -> {
-                    returnCode = "    MOV EAX, " + leftNodeToken + "\n" +
-                                 "    MUL EAX, " + rightNodeToken + "\n" +
-                                 "    MOV " + auxVariableName + ",EAX"; // Store the 32 bit LONG mul in aux variable.
-                }
-                case UsesType.FLOAT -> {
-                    returnCode = "    FLD " + leftNodeToken.replace(".", "_") + "\n" + // Load left node to FPU stack
-                                 "    FLD " + rightNodeToken.replace(".", "_") + "\n" + // Load right node to FPU stack
-                                 "    FMUL \n" + // Multiply...
-                                 "    FSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
-                }
-            };
+		return createDirective(node, leftNodeToken, rightNodeToken);
+	}
 
-            SymbolTable.addSymbol(auxVariableName, TokenType.ID, node.getType(), UsesType.AUX_VAR);
+    private static String createDirective(SyntaxNode node, final String leftNodeToken, final String rightNodeToken) {
+        String returnCode = null;
 
-            // Clean node...
-            node.setName(auxVariableName);
-            node.setLeftChild(null);
-            node.setRightChild(null);
-            node.setLeaf(true);
+        final String auxVariableName = "@aux" + CodeGenerator.auxVariableCounter;
+        CodeGenerator.auxVariableCounter++;
 
-            return returnCode;
+        switch (node.getType()) {
+            case UsesType.USHORT ->
+                returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
+                        "\tMUL AL, " + rightNodeToken + "\n" +
+                        "\tMOV " + auxVariableName + ",AL"; // Store the 8 bit USHORT mul in aux variable.
+            case UsesType.LONG ->
+                returnCode = "\tMOV EAX, " + leftNodeToken + "\n" +
+                         "\tMUL EAX, " + rightNodeToken + "\n" +
+                         "\tMOV " + auxVariableName + ",EAX"; // Store the 32 bit LONG mul in aux variable.
+            case UsesType.FLOAT ->
+                returnCode = "\tFLD " + leftNodeToken.replace(".", "_").replace(":", "_") + "\n" + // Load left node to FPU stack
+                         "\tFLD " + rightNodeToken.replace(".", "_").replace(":", "_") + "\n" + // Load right node to FPU stack
+                         "\tFMUL \n" + // Multiply...
+                         "\tFSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
         }
-        return null;
-    }
+
+        SymbolTable.addSymbol(auxVariableName, TokenType.ID, node.getType(), UsesType.AUX_VAR);
+
+        node.setName(auxVariableName);
+        node.setLeftChild(null);
+        node.setRightChild(null);
+        node.setLeaf(true);
+
+        return returnCode;
+	}
 }
