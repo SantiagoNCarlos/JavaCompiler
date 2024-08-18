@@ -13,6 +13,8 @@ public class Attribute {
     Set<String> ambitosUsoIzquierdo = new HashSet<>();
     boolean usadaDerecho = false;
 	private Attribute parameter = null;
+	private String value = null;
+	private boolean isActive = false;
     
     public Attribute(String token, int id) {
     	this.token = token;
@@ -132,12 +134,26 @@ public class Attribute {
 		return parameter;
 	}
 
-	@Override
-	public String toString() {
-		return "Attribute [tokenID=" + tokenID + ", token=" + token + ", type=" + type + ", line=" + line + ", uso="
-				+ uso + ", esCheck=" + esCheck + ", ambitosUsoIzquierdo=" + ambitosUsoIzquierdo + ", usadaDerecho="
-				+ usadaDerecho + "]";
+	public void setActive(boolean active) {
+		isActive = active;
 	}
 
-	
+	public boolean isActive() {
+		return isActive;
+	}
+
+	public void setValue(String value) {
+		this.value = value;
+	}
+
+	public String getValue() {
+		return value;
+	}
+
+	@Override
+	public String toString() {
+		return "Attribute [tokenID= " + tokenID + ", token= " + token + ", type= " + type + ", line= " + line + ", uso= "
+				+ uso + ", esCheck= " + esCheck + ", ambitosUsoIzquierdo= " + ambitosUsoIzquierdo + ", usadaDerecho= "
+				+ usadaDerecho + ", value= " + value + ", isActive= " + isActive + "]";
+	}
 }

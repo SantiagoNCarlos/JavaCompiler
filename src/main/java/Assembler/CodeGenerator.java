@@ -29,7 +29,7 @@ public class CodeGenerator {
             case "llamadofuncion" -> FunctionCallerConstructor.generateStructureCode(node);
             case "llamadometodoclase" -> MethodCallerConstructor.generateStructureCode(node);
             case "print" -> PrintConstructor.generateStructureCode(node);
-            default -> nodeName.contains("DeclaracionFuncion") ? "\tRET \n\t" + functionsLabelsStack.pop() + " ENDP" : "";
+            default -> nodeName.contains("DeclaracionFuncion") ? "\tRET \n\t" + functionsLabelsStack.pop() + " ENDP\n" : "";
 
         };
     }

@@ -10,10 +10,12 @@ import java.util.Map;
 import static java.lang.Math.abs;
 import AnalizadorLexico.*;
 import Utilities.Logger;
+import AnalizadorLexico.Enums.TokenType;
 import AnalizadorLexico.SemanticActions.SemanticAction;
 import AnalizadorLexico.Enums.DelimiterType;
 import AnalizadorLexico.Enums.UsesType;
 import ArbolSintactico.SyntaxNode;
+import java.util.HashMap;
 %}
 
 %token ID CTE CADENA IF END_IF ELSE CLASS PRINT VOID LONG USHORT FLOAT WHILE DO MENORIGUAL MAYORIGUAL IGUAL NEGADO RETURN MASMAS CTE_FLOTANTE UNEXISTENT_RES_WORD CHECK
@@ -172,7 +174,18 @@ asignacion:
 
                                 var entrada = t.getAttribute(nombreCompleto);
                                 if (entrada.isPresent()) {
-                                    entrada.get().addAmbito(ambito);
+                                    Attribute entry = entrada.get();
+
+                                    entry.addAmbito(ambito);
+
+                                    Optional<Attribute> childNodeValue = rightSyntaxNode.getNodeValue();
+                                    if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { // If its a leaf node, then the value its a constant
+                                        entry.setActive(true);
+                                        entry.setValue(rightSyntaxNode.getName());
+                                    } else {
+                                        entry.setActive(false);
+                                        entry.setValue(null);
+                                    }
                                 }
                             }
                         }
@@ -197,13 +210,16 @@ asignacion:
                         asign.setType(tipo_validado);
                         $$ = new ParserVal(asign);
 
-/*
-                        var t = SymbolTable.getInstance();
+                        Attribute memberAttr = getMemberVarAttribute(accessNode);
 
-                        var entrada = t.getAttribute(getNameSymbolTableVariables(accessNode.getRI));
-                        if (entrada.isPresent()) {
-                            entrada.get().addAmbito(ambito);
-                        } */
+                        Optional<Attribute> childNodeValue = rightSyntaxNode.getNodeValue();
+                        if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { // If its a leaf node, then the value its a constant
+                          memberAttr.setActive(true);
+                          memberAttr.setValue(rightSyntaxNode.getName());
+                        } else {
+                          memberAttr.setActive(false);
+                          memberAttr.setValue(null);
+                        }
                     }
             }
 			| acceso '=' error {
@@ -304,18 +320,48 @@ termino:
                         String tipo_validado = validarTipos((SyntaxNode) $1.obj, (SyntaxNode) $3.obj, false);
 
                         if (!tipo_validado.equals("Error")) {
-                            var x = new SyntaxNode("*", (SyntaxNode) $1.obj, (SyntaxNode)  $3.obj);
-                            x.setType(tipo_validado);
-                            $$ = new ParserVal(x);
 
-                            if ((SyntaxNode) $3.obj != null && ((SyntaxNode) $3.obj).isLeaf()){
-                                String nombreCompleto = getNameSymbolTableVariables(((SyntaxNode)$3.obj).getName());
+                            SyntaxNode factorNode = (SyntaxNode) $3.obj;
 
-                                if (!nombreCompleto.equals("Error")) {
-                                    var t = SymbolTable.getInstance();
-                                    var entrada = t.getAttribute(nombreCompleto);
-                                    if (entrada.isPresent())
-                                        entrada.get().setUsadaDerecho(true);
+                            if (factorNode != null) {
+                                if (factorNode.isLeaf()){
+                                    String nombreCompleto = getNameSymbolTableVariables(factorNode.getName());
+
+                                    if (!nombreCompleto.equals("Error")) {
+                                        var t = SymbolTable.getInstance();
+                                        var entrada = t.getAttribute(nombreCompleto);
+                                        if (entrada.isPresent()) {
+                                            Attribute entry = entrada.get();
+                                            entry.setUsadaDerecho(true);
+
+                                            if (entry.isActive()) {
+                                                final String value = entry.getValue();
+
+                                                var x = new SyntaxNode("*", (SyntaxNode) $1.obj, new SyntaxNode(value, entry.getType()));
+                                                x.setType(tipo_validado);
+                                                $$ = new ParserVal(x);
+                                            } else {
+                                                var x = new SyntaxNode("*", (SyntaxNode) $1.obj, (SyntaxNode)  $3.obj);
+                                                x.setType(tipo_validado);
+                                                $$ = new ParserVal(x);
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    if (factorNode.getName().equalsIgnoreCase("acceso")) {
+                                        Attribute memberAttr = getMemberVarAttribute(factorNode);
+                                        if (memberAttr != null && memberAttr.isActive()) {
+                                            final String value = memberAttr.getValue();
+
+                                            var x = new SyntaxNode("*", (SyntaxNode) $1.obj, new SyntaxNode(value, memberAttr.getType()));
+                                            x.setType(tipo_validado);
+                                            $$ = new ParserVal(x);
+                                        } else {
+                                            var x = new SyntaxNode("*", (SyntaxNode) $1.obj, (SyntaxNode)  $3.obj);
+                                            x.setType(tipo_validado);
+                                            $$ = new ParserVal(x);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -324,18 +370,47 @@ termino:
                         String tipo_validado = validarTipos((SyntaxNode) $1.obj, (SyntaxNode) $3.obj, false);
 
                         if (!tipo_validado.equals("Error")) {
-                            var x = new SyntaxNode("/", (SyntaxNode) $1.obj, (SyntaxNode)  $3.obj);
-                            x.setType(tipo_validado);
-                            $$ = new ParserVal(x);
+                            SyntaxNode factorNode = (SyntaxNode) $3.obj;
 
-                            if ((SyntaxNode) $3.obj != null && ((SyntaxNode) $3.obj).isLeaf()){
-                                String nombreCompleto = getNameSymbolTableVariables(((SyntaxNode)$3.obj).getName());
+                            if (factorNode != null) {
+                                if (factorNode.isLeaf()){
+                                    String nombreCompleto = getNameSymbolTableVariables(factorNode.getName());
 
-                                if (!nombreCompleto.equals("Error")) {
-                                    var t = SymbolTable.getInstance();
-                                    var entrada = t.getAttribute(nombreCompleto);
-                                    if (entrada.isPresent())
-                                        entrada.get().setUsadaDerecho(true);
+                                    if (!nombreCompleto.equals("Error")) {
+                                        var t = SymbolTable.getInstance();
+                                        var entrada = t.getAttribute(nombreCompleto);
+                                        if (entrada.isPresent()) {
+                                            Attribute entry = entrada.get();
+                                            entry.setUsadaDerecho(true);
+
+                                            if (entry.isActive()) {
+                                                final String value = entry.getValue();
+
+                                                var x = new SyntaxNode("/", (SyntaxNode) $1.obj, new SyntaxNode(value, entry.getType()));
+                                                x.setType(tipo_validado);
+                                                $$ = new ParserVal(x);
+                                            } else {
+                                                var x = new SyntaxNode("/", (SyntaxNode) $1.obj, (SyntaxNode)  $3.obj);
+                                                x.setType(tipo_validado);
+                                                $$ = new ParserVal(x);
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    if (factorNode.getName().equalsIgnoreCase("acceso")) {
+                                        Attribute memberAttr = getMemberVarAttribute(factorNode);
+                                        if (memberAttr != null && memberAttr.isActive()) {
+                                            final String value = memberAttr.getValue();
+
+                                            var x = new SyntaxNode("/", (SyntaxNode) $1.obj, new SyntaxNode(value, memberAttr.getType()));
+                                            x.setType(tipo_validado);
+                                            $$ = new ParserVal(x);
+                                        } else {
+                                            var x = new SyntaxNode("/", (SyntaxNode) $1.obj, (SyntaxNode)  $3.obj);
+                                            x.setType(tipo_validado);
+                                            $$ = new ParserVal(x);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -348,19 +423,39 @@ termino:
             }
    			| factor {
    			            // $$ = $1;
-   			            SyntaxNode node = (SyntaxNode) val_peek(1).obj;
+   			            SyntaxNode node = (SyntaxNode) $1.obj;
 
-                        if (node != null && node.isLeaf()){
-                            String nombreCompleto = getNameSymbolTableVariables(node.getName());
-                            //String nombreCompleto = getNameSymbolTableVariables(((SyntaxNode)$1.obj).getName());
+                        if (node != null) {
+                            if (node.isLeaf()){
+                                String nombreCompleto = getNameSymbolTableVariables(node.getName());
 
-                            if (!nombreCompleto.equals("Error")) {
-                                $$ = $1;
+                                if (!nombreCompleto.equals("Error")) {
 
-                                var t = SymbolTable.getInstance();
-                                var entrada = t.getAttribute(nombreCompleto);
-                                if (entrada.isPresent())
-                                    entrada.get().setUsadaDerecho(true);
+                                    var t = SymbolTable.getInstance();
+                                    var entrada = t.getAttribute(nombreCompleto);
+                                    if (entrada.isPresent()) {
+                                        Attribute entry = entrada.get();
+                                        entry.setUsadaDerecho(true);
+
+                                        if (entry.isActive()) {
+                                            final String value = entry.getValue();
+
+                                            $$ = new ParserVal(new SyntaxNode(value, entry.getType()));
+                                        } else {
+                                            $$ = $1;
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (node.getName().equalsIgnoreCase("acceso")) {
+                                    Attribute memberAttr = getMemberVarAttribute(node);
+                                    if (memberAttr != null && memberAttr.isActive()) {
+                                        final String value = memberAttr.getValue();
+                                        $$ = new ParserVal(new SyntaxNode(value, memberAttr.getType()));
+                                    } else {
+                                        $$ = $1;
+                                    }
+                                }
                             }
                         }
    			}
@@ -378,7 +473,14 @@ factor:
       		                var symbolType = getTypeSymbolTableVariables(value);
 
                             if (!symbolType.equals("Error")) {
-                                $$ = new ParserVal(new SyntaxNode(value, symbolType)); // Crear un nodo para la constante
+                                String finalValue = "";
+                                if (symbolType.equals(UsesType.USHORT)) {
+                                    finalValue = value;
+                                } else {
+                                    finalValue = "-" + value;
+                                    SymbolTable.addSymbol(finalValue, TokenType.CONSTANT, symbolType, UsesType.CONSTANT, LexicalAnalyzer.getLine());
+                                }
+                                $$ = new ParserVal(new SyntaxNode(finalValue, symbolType)); // Crear un nodo para la constante
                             }
       		            }
 
@@ -389,11 +491,8 @@ factor:
                         value = processFloat(value, false);
 
                         if (!value.equals("Error")) {
-                            var symbolType = getTypeSymbolTableVariables(value);
-
-                            if (!symbolType.equals("Error")) {
-                                $$ = new ParserVal(new SyntaxNode(value, symbolType)); // Crear un nodo para la constante
-                            }
+                            SymbolTable.addSymbol("-" + value, TokenType.CONSTANT, UsesType.FLOAT, UsesType.CONSTANT, LexicalAnalyzer.getLine());
+                            $$ = new ParserVal(new SyntaxNode("-" + value, UsesType.FLOAT)); // Crear un nodo para la constante
                         }
             }
       		| '-' ID {
@@ -698,21 +797,24 @@ bloque_while_void:
 bloque_if_void:
 			IF condicion_parentesis bloque_condicion_void END_IF {
                     logger.logDebugSyntax("Bloque IF en la linea " + LexicalAnalyzer.getLine());
-                    $$ = new ParserVal(new SyntaxNode("if", (SyntaxNode)$2.obj, (SyntaxNode)$3.obj, null));
+
+                    SyntaxNode thenSyntaxNode = new SyntaxNode("THEN", (SyntaxNode)$3.obj, null);
+                    $$ = new ParserVal(new SyntaxNode("IF", (SyntaxNode)$2.obj, thenSyntaxNode, null));
             }
 			| IF condicion_parentesis bloque_condicion_void ELSE bloque_condicion_void END_IF  {
-                    logger.logDebugSyntax("Bloque IF en la linea " + LexicalAnalyzer.getLine());
-
                     // Crear nodos para 'then' y 'else'
-                    SyntaxNode thenSyntaxNode = new SyntaxNode("then", (SyntaxNode)$3.obj, null);
-                    SyntaxNode elseSyntaxNode = new SyntaxNode("else", (SyntaxNode)$5.obj, null);
+                    SyntaxNode thenSyntaxNode = new SyntaxNode("THEN", (SyntaxNode)$3.obj, null);
+                    SyntaxNode elseSyntaxNode = new SyntaxNode("ELSE", (SyntaxNode)$5.obj, null);
 
                     // Crear un nodo para el cuerpo del 'if' que contiene 'then' y 'else'
-                    SyntaxNode cuerpoIf = new SyntaxNode("cuerpoIf", thenSyntaxNode, elseSyntaxNode);
+                    SyntaxNode camino = new SyntaxNode("Camino", thenSyntaxNode, elseSyntaxNode);
 
                     // Crear el nodo 'if' con la condici?n y el cuerpo como hijos
-                    $$ = new ParserVal(new SyntaxNode("if", (SyntaxNode)$2.obj, cuerpoIf));
-                    logger.logDebugSyntax("Bloque IF en la linea " + LexicalAnalyzer.getLine());
+                    SyntaxNode ifSyntaxNode = new SyntaxNode("IF", (SyntaxNode) $2.obj, camino);
+
+                    // Crear un nodo 'if' con la condición y los nodos 'then' y 'else' como hijos
+                    $$ = new ParserVal(ifSyntaxNode);
+                    logger.logDebugSyntax("Bloque IF-ELSE en la linea " + LexicalAnalyzer.getLine());
             }
             | IF condicion_parentesis bloque_condicion_void ELSE bloque_condicion_void error {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta la palabra reservada END_IF.");
@@ -764,9 +866,10 @@ definicion_class:
             
             | header_class {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','.");}
             ;
+
 forward_declaration:	
-            CLASS ID ',' {
-            			logger.logDebugSyntax("FORWARD DECLARATION en la linea " + LexicalAnalyzer.getLine());}
+            CLASS ID ',' { logger.logDebugSyntax("FORWARD DECLARATION en la linea " + LexicalAnalyzer.getLine()); }
+
 header_class:
 		    CLASS ID {
 		        logger.logDebugSyntax("CLASE en la linea " + LexicalAnalyzer.getLine());
@@ -774,7 +877,13 @@ header_class:
 		
 		        /* Registrar la clase en la tabla de sÃ­mbolos*/
 		        SymbolTable tablaSimbolos = SymbolTable.getInstance();
-		        tablaSimbolos.insertAttribute(new Attribute(Parser.ID, nombreClase, "Clase", UsesType.CLASE, LexicalAnalyzer.getLine()));
+
+		        Attribute newAttr = new Attribute(Parser.ID, nombreClase, "Clase", UsesType.CLASE, LexicalAnalyzer.getLine());
+		        tablaSimbolos.insertAttribute(newAttr);
+
+		        parseAndAddToClassMap(newAttr.getToken());
+
+		        currentClass = nombreClase;
 		
 		        nuevoAmbito($2.sval); /* Agrega el nuevo Ã¡mbito de la clase*/
 
@@ -820,7 +929,22 @@ bloque_class:
             ;
 
 inheritance_by_composition:
-            ID { logger.logDebugSyntax("Herencia por composicion en la linea " + LexicalAnalyzer.getLine());}
+            ID {
+                if (!esTipoClaseValido($1.sval)) {
+                    yyerror("Tipo de clase no declarado: " + $1.sval);
+                } else {
+                  logger.logDebugSyntax("Herencia por composicion en la linea " + LexicalAnalyzer.getLine());
+
+                  ArrayList<String> inheritanceClasses = compositionMap.get(currentClass);
+                  final String classFullName = getNameSymbolTableVariables($1.sval);
+                  if (inheritanceClasses == null) {
+                    inheritanceClasses = new ArrayList<>();
+                    compositionMap.put(currentClass, inheritanceClasses);
+                  }
+
+                  inheritanceClasses.add(classFullName);
+                }
+            }
             ;
 
 declaracion_var_class:
@@ -832,6 +956,16 @@ declaracion_var_class:
                     else {
                         var t = SymbolTable.getInstance();
                         String tipoVariable = $1.sval;
+
+                        ArrayList<Attribute> classAttributes = getClassMembers(tipoVariable);
+                        ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(tipoVariable));
+
+                        if (parentClasses != null) {
+                          for (String parentClass : parentClasses) {
+                            classAttributes.addAll(getClassMembers(parentClass));
+                          }
+                        }
+
                         for (String varName : lista_variables) {
                             String nombreCompleto = varName;
                             var entrada = t.getAttribute(nombreCompleto);
@@ -843,7 +977,14 @@ declaracion_var_class:
                                     yyerror("La variable declarada ya existe " + (varName.contains(":") ? varName.substring(0, varName.indexOf(':')) : "en ambito global"));
                                 }
                             } else {
-                                t.insertAttribute(new Attribute(Parser.ID, nombreCompleto, tipoVariable, UsesType.CLASS_VAR, LexicalAnalyzer.getLine()));
+                                Attribute classVarAttr = new Attribute(Parser.ID, varName, tipoVariable, UsesType.CLASS_VAR, LexicalAnalyzer.getLine());
+                                t.insertAttribute(classVarAttr);
+
+                                for (Attribute attr : classAttributes) {
+                                    final String attrName = attr.getToken() + ":" + varName;
+                                    Attribute memberAttr = new Attribute(Parser.ID, attrName, attr.getType(), attr.getUso(), LexicalAnalyzer.getLine());
+                                    t.insertAttribute(memberAttr);
+                                }
                             }
                         }
                         lista_variables.clear();
@@ -979,18 +1120,37 @@ impresion:
 
 %%
 public static Logger logger = Logger.getInstance();
-public static String ambito = "global"; //ver esto dsp
+public static String ambito = "global";
 public static boolean error = false;
 public static SyntaxNode padre = null;
 public static List<SyntaxNode> arbolFunciones = new ArrayList<SyntaxNode>();
 public static ArrayList<String> lista_variables = new ArrayList<>();
 public static Boolean flagAmbitoCambiado = false;
+public static Map<String, String> classFullNames = new HashMap<>();
+public static Map<String, ArrayList<String>> compositionMap = new HashMap<>();
+public static String currentClass = "";
 
 private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
+    ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(tipoClase));
+
     for (Map.Entry<String, Attribute> entry : SymbolTable.getTableMap().entrySet()) {
         Attribute attribute = entry.getValue();
 
-        if (attribute.getUso().equals(UsesType.FUNCTION) && attribute.getToken().contains(tipoClase)) {
+        if (parentClasses == null) {
+          parentClasses = new ArrayList<>();
+        }
+
+        parentClasses.add(tipoClase);
+
+        boolean containsClass = false;
+        for (String parentClass : parentClasses) { // Buscamos en clase y en sus padres
+            if (attribute.getToken().contains(parentClass.split(":")[0])) {
+                containsClass = true;
+                break;
+            }
+        }
+
+        if (attribute.getUso().equals(UsesType.FUNCTION) && containsClass) {
             // Extraer el nombre del método del token
             String metodo = attribute.getToken().split(":")[0];
             // Verificar si el nombre del método coincide con el nombre del método buscado
@@ -1001,6 +1161,7 @@ private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
     }
     return false;
 }
+
 private boolean metodoExiste(String tipoClase, String nombreMetodo) {
     for (Map.Entry<String, Attribute> entry : SymbolTable.getTableMap().entrySet()) {
         Attribute attribute = entry.getValue();
@@ -1183,25 +1344,39 @@ private String getTypeSymbolTableVariables(String sval) {
 private String getTypeSymbolTableVariablesEnAcceso(String sval, String sval2) {
     final String objectType = getTypeSymbolTableVariables(sval2);
     final String ambitoActual = ":" + Parser.ambito;
-    String nombreCompleto = sval + ambitoActual + ":" + objectType;
 
-    while (!nombreCompleto.isEmpty()) {
-        String tipo = valorSimbolo(nombreCompleto);
-        if (!tipo.equals("Error")) {
-            return tipo;
-        }
-        // Recortar el ámbito para buscar en el ámbito padre
-        if (nombreCompleto.contains(":")) {
-            nombreCompleto = nombreCompleto.substring(0, nombreCompleto.lastIndexOf(':'));
-        } else {
-            nombreCompleto = "";
-        }
+    ArrayList<String> composedClassesList = new ArrayList<>(compositionMap.get(classFullNames.get(objectType)));
+    composedClassesList.add(objectType);
+
+    for (String composedClass : composedClassesList) {
+      final String nombreCompleto = sval + ambitoActual + ":" + composedClass.split(":")[0];
+      final String foundType = hallarTipoEnAmbito(nombreCompleto);
+      if (!foundType.isEmpty()) {
+          return foundType;
+      }
     }
+
     // Si llegamos aquí, significa que no se encontró el tipo de la variable
     if (!falloNombre(sval)) {
-		yyerror("La variable o funcion no es reconocible en el ambito actual.");
+      yyerror("La variable o funcion no es reconocible en el ambito actual.");
     }
     return "Error";
+}
+
+public String hallarTipoEnAmbito(String nombreCompleto) {
+    while (!nombreCompleto.isEmpty()) {
+      String tipo = valorSimbolo(nombreCompleto);
+      if (!tipo.equals("Error")) {
+        return tipo;
+      }
+      // Recortar el ámbito para buscar en el ámbito padre
+      if (nombreCompleto.contains(":")) {
+        nombreCompleto = nombreCompleto.substring(0, nombreCompleto.lastIndexOf(':'));
+      } else {
+        nombreCompleto = "";
+      }
+    }
+    return "";
 }
 
 private Boolean falloNombre(String sval){
@@ -1401,4 +1576,56 @@ public static void checkFunctionCall(String funcName, String parameterName) {
         }
       }
     }
+}
+
+private void parseAndAddToClassMap(String input) {
+    String[] parts = input.split(":");
+    if (parts.length > 1) {
+        String key = parts[0];
+        classFullNames.put(key, input);
+    } else {
+        System.out.println("Input string format is incorrect: " + input);
+    }
+}
+
+private String swapComponents(String input) {
+    String[] parts = input.split(":");
+    if (parts.length == 2) {
+        return parts[1] + ":" + parts[0];
+    } else {
+        System.out.println("Input string format is incorrect: " + input);
+        return input;  // Devuelve la cadena original si el formato es incorrecto
+    }
+}
+
+private ArrayList<Attribute> getClassMembers(final String className) {
+    ArrayList<Attribute> entries = new ArrayList<>(SymbolTable.getTableMap().values());
+    ArrayList<Attribute> members = new ArrayList<>();
+
+    // Find entry related to class definition
+    final String classAmbit = swapComponents(className.contains(":") ? className : classFullNames.get(className));
+
+    // Get all members from a class
+    for (Attribute entry : entries) {
+        if (entry.getToken().contains(classAmbit) && entry.getUso().equals(UsesType.VARIABLE)) {
+            members.add(entry);
+        }
+    }
+    return members;
+}
+
+private Attribute getMemberVarAttribute(SyntaxNode accessNode) {
+  if (accessNode != null) {
+    final String varName = accessNode.getLeftChild().getName();
+    final String memberName = accessNode.getRightChild().getName();
+    //final String memberType = accessNode.getRightChild().getType();
+
+    for (Attribute entry : SymbolTable.getTableMap().values()) {
+      final String token = entry.getToken();
+      if (token.startsWith(memberName) && token.contains(varName + ":")) {
+        return entry;
+      }
+    }
+  }
+  return null;
 }

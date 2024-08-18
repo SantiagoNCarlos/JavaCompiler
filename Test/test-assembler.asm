@@ -18,77 +18,50 @@ printf PROTO C :PTR BYTE, :VARARG
 	formatStringLong db "%d", 0
 	formatStringUShort db "%hu", 0
 	formatStringFloat db "%f", 0
-	u_global_persona_actualizar DD ?
-	@aux4 DD ?
-	o_global_persona DD ?
-	edad_global_persona DB ?
-	u_global_actualizar DD ?
-	a_global DB ?
-	x_global DD ?
+
+	c_5_us DB 5
+	c_0_us DB 0
 	c_1_us DB 1
-	o_global_persona_p_global DD ?
-	edad_global_persona_p_global DD ?
-	c_global DB ?
-	@aux3 DB ?
-	@aux2 DD ?
 	b_global DB ?
-	d_global DB ?
-	c_6_us DB 6
-	@aux1 DD ?
-	c_9_us DB 9
 
 .code
 start:
 
-	MOV AL, c_6_us
+	MOV AL, b_global
+	MOV BL, c_0_us
+	CMP AL, BL
+	JE label1
+
+	MOV AL, c_5_us
 	MOV b_global,AL
 
-	MOV AL, c_9_us
-	MOV c_global,AL
+	JMP label2
+	label1:
 
 	MOV AL, c_1_us
-	MOV d_global,AL
+	MOV b_global,AL
 
-	FLD x_global
-	FLD 1_0
-	FADD
-	FSTP @aux1
+	label2:
 
-	FLD o_global_persona_p_global
-	FSTP u_global_persona_actualizar
+	FUNCTION_act_global PROC
+	MOV AL, c_1_us
+	MOV BL, c_0_us
+	CMP AL, BL
+	JE label3
 
-	CALL FUNCTION_actualizar_global_persona
+	MOV AL, c_5_us
+	MOV b_global,AL
 
-	FUNCTION_actualizar_global_persona PROC
-	FLD u_global_persona_actualizar
-	FLD c_1_us
-	FADD
-	FSTP @aux2
+	JMP label4
+	label3:
 
-	FLD @aux2
-	FSTP u_global_persona_actualizar
+	MOV AL, c_1_us
+	MOV b_global,AL
 
-	RET 
-	FUNCTION_actualizar_global_persona ENDP
-	FUNCTION_actualizar2_global_persona PROC
-	MOV AL, edad_global_persona
-	ADD AL, c_1_us
-	MOV @aux3,AL
-	MOV AL, @aux3
-	MOV edad_global_persona,AL
+	label4:
 
 	RET 
-	FUNCTION_actualizar2_global_persona ENDP
-	FUNCTION_actualizar_global PROC
-	FLD u_global_actualizar
-	FLD c_1_us
-	FADD
-	FSTP @aux4
+	FUNCTION_act_global ENDP
 
-	FLD @aux4
-	FSTP u_global_actualizar
 
-	RET 
-	FUNCTION_actualizar_global ENDP
-
-end start
+END start

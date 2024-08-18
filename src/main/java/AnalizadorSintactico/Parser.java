@@ -28,11 +28,13 @@ import java.util.Map;
 import static java.lang.Math.abs;
 import AnalizadorLexico.*;
 import Utilities.Logger;
+import AnalizadorLexico.Enums.TokenType;
 import AnalizadorLexico.SemanticActions.SemanticAction;
 import AnalizadorLexico.Enums.DelimiterType;
 import AnalizadorLexico.Enums.UsesType;
 import ArbolSintactico.SyntaxNode;
-//#line 33 "Parser.java"
+import java.util.HashMap;
+//#line 35 "Parser.java"
 
 
 
@@ -757,20 +759,39 @@ final static String yyrule[] = {
 "impresion : PRINT error",
 };
 
-//#line 981 "grammar.y"
+//#line 1122 "grammar.y"
 public static Logger logger = Logger.getInstance();
-public static String ambito = "global"; //ver esto dsp
+public static String ambito = "global";
 public static boolean error = false;
 public static SyntaxNode padre = null;
 public static List<SyntaxNode> arbolFunciones = new ArrayList<SyntaxNode>();
 public static ArrayList<String> lista_variables = new ArrayList<>();
 public static Boolean flagAmbitoCambiado = false;
+public static Map<String, String> classFullNames = new HashMap<>();
+public static Map<String, ArrayList<String>> compositionMap = new HashMap<>();
+public static String currentClass = "";
 
 private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
+    ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(tipoClase));
+
     for (Map.Entry<String, Attribute> entry : SymbolTable.getTableMap().entrySet()) {
         Attribute attribute = entry.getValue();
 
-        if (attribute.getUso().equals(UsesType.FUNCTION) && attribute.getToken().contains(tipoClase)) {
+        if (parentClasses == null) {
+          parentClasses = new ArrayList<>();
+        }
+
+        parentClasses.add(tipoClase);
+
+        boolean containsClass = false;
+        for (String parentClass : parentClasses) { // Buscamos en clase y en sus padres
+            if (attribute.getToken().contains(parentClass.split(":")[0])) {
+                containsClass = true;
+                break;
+            }
+        }
+
+        if (attribute.getUso().equals(UsesType.FUNCTION) && containsClass) {
             // Extraer el nombre del método del token
             String metodo = attribute.getToken().split(":")[0];
             // Verificar si el nombre del método coincide con el nombre del método buscado
@@ -781,6 +802,7 @@ private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
     }
     return false;
 }
+
 private boolean metodoExiste(String tipoClase, String nombreMetodo) {
     for (Map.Entry<String, Attribute> entry : SymbolTable.getTableMap().entrySet()) {
         Attribute attribute = entry.getValue();
@@ -963,25 +985,39 @@ private String getTypeSymbolTableVariables(String sval) {
 private String getTypeSymbolTableVariablesEnAcceso(String sval, String sval2) {
     final String objectType = getTypeSymbolTableVariables(sval2);
     final String ambitoActual = ":" + Parser.ambito;
-    String nombreCompleto = sval + ambitoActual + ":" + objectType;
 
-    while (!nombreCompleto.isEmpty()) {
-        String tipo = valorSimbolo(nombreCompleto);
-        if (!tipo.equals("Error")) {
-            return tipo;
-        }
-        // Recortar el ámbito para buscar en el ámbito padre
-        if (nombreCompleto.contains(":")) {
-            nombreCompleto = nombreCompleto.substring(0, nombreCompleto.lastIndexOf(':'));
-        } else {
-            nombreCompleto = "";
-        }
+    ArrayList<String> composedClassesList = new ArrayList<>(compositionMap.get(classFullNames.get(objectType)));
+    composedClassesList.add(objectType);
+
+    for (String composedClass : composedClassesList) {
+      final String nombreCompleto = sval + ambitoActual + ":" + composedClass.split(":")[0];
+      final String foundType = hallarTipoEnAmbito(nombreCompleto);
+      if (!foundType.isEmpty()) {
+          return foundType;
+      }
     }
+
     // Si llegamos aquí, significa que no se encontró el tipo de la variable
     if (!falloNombre(sval)) {
-		yyerror("La variable o funcion no es reconocible en el ambito actual.");
+      yyerror("La variable o funcion no es reconocible en el ambito actual.");
     }
     return "Error";
+}
+
+public String hallarTipoEnAmbito(String nombreCompleto) {
+    while (!nombreCompleto.isEmpty()) {
+      String tipo = valorSimbolo(nombreCompleto);
+      if (!tipo.equals("Error")) {
+        return tipo;
+      }
+      // Recortar el ámbito para buscar en el ámbito padre
+      if (nombreCompleto.contains(":")) {
+        nombreCompleto = nombreCompleto.substring(0, nombreCompleto.lastIndexOf(':'));
+      } else {
+        nombreCompleto = "";
+      }
+    }
+    return "";
 }
 
 private Boolean falloNombre(String sval){
@@ -1182,7 +1218,59 @@ public static void checkFunctionCall(String funcName, String parameterName) {
       }
     }
 }
-//#line 1114 "Parser.java"
+
+private void parseAndAddToClassMap(String input) {
+    String[] parts = input.split(":");
+    if (parts.length > 1) {
+        String key = parts[0];
+        classFullNames.put(key, input);
+    } else {
+        System.out.println("Input string format is incorrect: " + input);
+    }
+}
+
+private String swapComponents(String input) {
+    String[] parts = input.split(":");
+    if (parts.length == 2) {
+        return parts[1] + ":" + parts[0];
+    } else {
+        System.out.println("Input string format is incorrect: " + input);
+        return input;  // Devuelve la cadena original si el formato es incorrecto
+    }
+}
+
+private ArrayList<Attribute> getClassMembers(final String className) {
+    ArrayList<Attribute> entries = new ArrayList<>(SymbolTable.getTableMap().values());
+    ArrayList<Attribute> members = new ArrayList<>();
+
+    // Find entry related to class definition
+    final String classAmbit = swapComponents(className.contains(":") ? className : classFullNames.get(className));
+
+    // Get all members from a class
+    for (Attribute entry : entries) {
+        if (entry.getToken().contains(classAmbit) && entry.getUso().equals(UsesType.VARIABLE)) {
+            members.add(entry);
+        }
+    }
+    return members;
+}
+
+private Attribute getMemberVarAttribute(SyntaxNode accessNode) {
+  if (accessNode != null) {
+    final String varName = accessNode.getLeftChild().getName();
+    final String memberName = accessNode.getRightChild().getName();
+    //final String memberType = accessNode.getRightChild().getType();
+
+    for (Attribute entry : SymbolTable.getTableMap().values()) {
+      final String token = entry.getToken();
+      if (token.startsWith(memberName) && token.contains(varName + ":")) {
+        return entry;
+      }
+    }
+  }
+  return null;
+}
+//#line 1202 "Parser.java"
 //###############################################################
 // method: yylexdebug : check lexer state
 //###############################################################
@@ -1337,106 +1425,106 @@ boolean doaction;
       {
 //########## USER-SUPPLIED ACTIONS ##########
 case 1:
-//#line 29 "grammar.y"
+//#line 31 "grammar.y"
 { padre = new SyntaxNode("root", (SyntaxNode) val_peek(1).obj , null);
             					verificarReglasCheck();}
 break;
 case 3:
-//#line 32 "grammar.y"
+//#line 34 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un }.");}
 break;
 case 4:
-//#line 33 "grammar.y"
+//#line 35 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un {.");}
 break;
 case 5:
-//#line 37 "grammar.y"
+//#line 39 "grammar.y"
 { yyval = val_peek(0); }
 break;
 case 6:
-//#line 38 "grammar.y"
+//#line 40 "grammar.y"
 { if ((SyntaxNode) val_peek(0).obj != null)
             							yyval = new ParserVal(new SyntaxNode("Bloque de sentencias", (SyntaxNode) val_peek(1).obj, (SyntaxNode) val_peek(0).obj)); }
 break;
 case 7:
-//#line 42 "grammar.y"
+//#line 44 "grammar.y"
 {yyval = val_peek(0);}
 break;
 case 8:
-//#line 43 "grammar.y"
+//#line 45 "grammar.y"
 { if ((SyntaxNode) val_peek(0).obj != null)
       										yyval = new ParserVal(new SyntaxNode("Bloque de sentencias21", (SyntaxNode) val_peek(0).obj, (SyntaxNode) val_peek(1).obj)); }
 break;
 case 9:
-//#line 48 "grammar.y"
+//#line 50 "grammar.y"
 { yyval = val_peek(1); }
 break;
 case 11:
-//#line 50 "grammar.y"
+//#line 52 "grammar.y"
 { /*$$ = $1;*/
                                 logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','.");
                                 }
 break;
 case 12:
-//#line 53 "grammar.y"
+//#line 55 "grammar.y"
 { logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','."); }
 break;
 case 13:
-//#line 57 "grammar.y"
-{ yyval = val_peek(0);}
-break;
-case 14:
-//#line 58 "grammar.y"
-{ yyval = val_peek(0);}
-break;
-case 15:
 //#line 59 "grammar.y"
 { yyval = val_peek(0);}
 break;
-case 16:
+case 14:
 //#line 60 "grammar.y"
 { yyval = val_peek(0);}
 break;
-case 17:
+case 15:
 //#line 61 "grammar.y"
 { yyval = val_peek(0);}
 break;
+case 16:
+//#line 62 "grammar.y"
+{ yyval = val_peek(0);}
+break;
+case 17:
+//#line 63 "grammar.y"
+{ yyval = val_peek(0);}
+break;
 case 18:
-//#line 65 "grammar.y"
-{ yyval = val_peek(0);}
-break;
-case 19:
-//#line 66 "grammar.y"
-{ yyval = val_peek(0);}
-break;
-case 20:
 //#line 67 "grammar.y"
 { yyval = val_peek(0);}
 break;
+case 19:
+//#line 68 "grammar.y"
+{ yyval = val_peek(0);}
+break;
+case 20:
+//#line 69 "grammar.y"
+{ yyval = val_peek(0);}
+break;
 case 21:
-//#line 74 "grammar.y"
+//#line 76 "grammar.y"
 {
                               logger.logDebugSyntax("Declaración1 de variables en la linea " + LexicalAnalyzer.getLine());
                             }
 break;
 case 24:
-//#line 82 "grammar.y"
-{yyval = val_peek(0);}
-break;
-case 25:
-//#line 83 "grammar.y"
-{yyval = val_peek(0);}
-break;
-case 26:
 //#line 84 "grammar.y"
 {yyval = val_peek(0);}
 break;
-case 27:
+case 25:
 //#line 85 "grammar.y"
 {yyval = val_peek(0);}
 break;
+case 26:
+//#line 86 "grammar.y"
+{yyval = val_peek(0);}
+break;
+case 27:
+//#line 87 "grammar.y"
+{yyval = val_peek(0);}
+break;
 case 28:
-//#line 91 "grammar.y"
+//#line 93 "grammar.y"
 {
 			        var t = SymbolTable.getInstance();
 			        String tipoVariable = val_peek(1).sval; 
@@ -1461,7 +1549,7 @@ case 28:
 		        }
 break;
 case 29:
-//#line 113 "grammar.y"
+//#line 115 "grammar.y"
 {
                     var t = SymbolTable.getInstance();
                     String tipoVariable = val_peek(1).sval;
@@ -1484,27 +1572,27 @@ case 29:
 		    }
 break;
 case 30:
-//#line 133 "grammar.y"
+//#line 135 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el nombre de la variable.");
 	       	}
 break;
 case 31:
-//#line 139 "grammar.y"
+//#line 141 "grammar.y"
 {
                     yyval = new ParserVal(new SyntaxNode("ListaVariables", (SyntaxNode)val_peek(2).obj, new SyntaxNode(val_peek(0).sval)));
                     lista_variables.add(val_peek(0).sval +":" +  Parser.ambito);
             }
 break;
 case 32:
-//#line 143 "grammar.y"
+//#line 145 "grammar.y"
 {
                     yyval = new ParserVal(new SyntaxNode(val_peek(0).sval));
                     lista_variables.add(val_peek(0).sval +":" +  Parser.ambito);
             }
 break;
 case 33:
-//#line 151 "grammar.y"
+//#line 153 "grammar.y"
 {
                     logger.logDebugSyntax("Asignacion en la linea " + LexicalAnalyzer.getLine());
 
@@ -1529,7 +1617,18 @@ case 33:
 
                                 var entrada = t.getAttribute(nombreCompleto);
                                 if (entrada.isPresent()) {
-                                    entrada.get().addAmbito(ambito);
+                                    Attribute entry = entrada.get();
+
+                                    entry.addAmbito(ambito);
+
+                                    Optional<Attribute> childNodeValue = rightSyntaxNode.getNodeValue();
+                                    if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { /* If its a leaf node, then the value its a constant*/
+                                        entry.setActive(true);
+                                        entry.setValue(rightSyntaxNode.getName());
+                                    } else {
+                                        entry.setActive(false);
+                                        entry.setValue(null);
+                                    }
                                 }
                             }
                         }
@@ -1540,13 +1639,13 @@ case 33:
             }
 break;
 case 34:
-//#line 184 "grammar.y"
+//#line 197 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una expresion aritmética");
             }
 break;
 case 35:
-//#line 187 "grammar.y"
+//#line 200 "grammar.y"
 {
                     logger.logDebugSyntax("Asignación en la linea " + LexicalAnalyzer.getLine());
 
@@ -1560,24 +1659,27 @@ case 35:
                         asign.setType(tipo_validado);
                         yyval = new ParserVal(asign);
 
-/*
-                        var t = SymbolTable.getInstance();
+                        Attribute memberAttr = getMemberVarAttribute(accessNode);
 
-                        var entrada = t.getAttribute(getNameSymbolTableVariables(accessNode.getRI));
-                        if (entrada.isPresent()) {
-                            entrada.get().addAmbito(ambito);
-                        } */
+                        Optional<Attribute> childNodeValue = rightSyntaxNode.getNodeValue();
+                        if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { /* If its a leaf node, then the value its a constant*/
+                          memberAttr.setActive(true);
+                          memberAttr.setValue(rightSyntaxNode.getName());
+                        } else {
+                          memberAttr.setActive(false);
+                          memberAttr.setValue(null);
+                        }
                     }
             }
 break;
 case 36:
-//#line 209 "grammar.y"
+//#line 225 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una expresion aritmética");
             }
 break;
 case 37:
-//#line 215 "grammar.y"
+//#line 231 "grammar.y"
 {
                     logger.logDebugSyntax("Incremento en la linea " + LexicalAnalyzer.getLine());
 
@@ -1621,7 +1723,7 @@ case 37:
 		    }
 break;
 case 38:
-//#line 260 "grammar.y"
+//#line 276 "grammar.y"
 {
                     String tipo_validado = validarTipos((SyntaxNode) val_peek(2).obj, (SyntaxNode) val_peek(0).obj, false);
 
@@ -1643,7 +1745,7 @@ case 38:
 			}
 break;
 case 39:
-//#line 279 "grammar.y"
+//#line 295 "grammar.y"
 {
                         String tipo_validado = validarTipos((SyntaxNode) val_peek(2).obj, (SyntaxNode) val_peek(0).obj, false);
 
@@ -1664,106 +1766,185 @@ case 39:
 			}
 break;
 case 40:
-//#line 297 "grammar.y"
+//#line 313 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un termino");}
 break;
 case 41:
-//#line 298 "grammar.y"
+//#line 314 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un termino");}
 break;
 case 42:
-//#line 299 "grammar.y"
+//#line 315 "grammar.y"
 { yyval = val_peek(0); }
 break;
 case 43:
-//#line 303 "grammar.y"
+//#line 319 "grammar.y"
 {
                         String tipo_validado = validarTipos((SyntaxNode) val_peek(2).obj, (SyntaxNode) val_peek(0).obj, false);
 
                         if (!tipo_validado.equals("Error")) {
-                            var x = new SyntaxNode("*", (SyntaxNode) val_peek(2).obj, (SyntaxNode)  val_peek(0).obj);
-                            x.setType(tipo_validado);
-                            yyval = new ParserVal(x);
 
-                            if ((SyntaxNode) val_peek(0).obj != null && ((SyntaxNode) val_peek(0).obj).isLeaf()){
-                                String nombreCompleto = getNameSymbolTableVariables(((SyntaxNode)val_peek(0).obj).getName());
+                            SyntaxNode factorNode = (SyntaxNode) val_peek(0).obj;
 
-                                if (!nombreCompleto.equals("Error")) {
-                                    var t = SymbolTable.getInstance();
-                                    var entrada = t.getAttribute(nombreCompleto);
-                                    if (entrada.isPresent())
-                                        entrada.get().setUsadaDerecho(true);
+                            if (factorNode != null) {
+                                if (factorNode.isLeaf()){
+                                    String nombreCompleto = getNameSymbolTableVariables(factorNode.getName());
+
+                                    if (!nombreCompleto.equals("Error")) {
+                                        var t = SymbolTable.getInstance();
+                                        var entrada = t.getAttribute(nombreCompleto);
+                                        if (entrada.isPresent()) {
+                                            Attribute entry = entrada.get();
+                                            entry.setUsadaDerecho(true);
+
+                                            if (entry.isActive()) {
+                                                final String value = entry.getValue();
+
+                                                var x = new SyntaxNode("*", (SyntaxNode) val_peek(2).obj, new SyntaxNode(value, entry.getType()));
+                                                x.setType(tipo_validado);
+                                                yyval = new ParserVal(x);
+                                            } else {
+                                                var x = new SyntaxNode("*", (SyntaxNode) val_peek(2).obj, (SyntaxNode)  val_peek(0).obj);
+                                                x.setType(tipo_validado);
+                                                yyval = new ParserVal(x);
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    if (factorNode.getName().equalsIgnoreCase("acceso")) {
+                                        Attribute memberAttr = getMemberVarAttribute(factorNode);
+                                        if (memberAttr != null && memberAttr.isActive()) {
+                                            final String value = memberAttr.getValue();
+
+                                            var x = new SyntaxNode("*", (SyntaxNode) val_peek(2).obj, new SyntaxNode(value, memberAttr.getType()));
+                                            x.setType(tipo_validado);
+                                            yyval = new ParserVal(x);
+                                        } else {
+                                            var x = new SyntaxNode("*", (SyntaxNode) val_peek(2).obj, (SyntaxNode)  val_peek(0).obj);
+                                            x.setType(tipo_validado);
+                                            yyval = new ParserVal(x);
+                                        }
+                                    }
                                 }
                             }
                         }
             }
 break;
 case 44:
-//#line 323 "grammar.y"
+//#line 369 "grammar.y"
 {
                         String tipo_validado = validarTipos((SyntaxNode) val_peek(2).obj, (SyntaxNode) val_peek(0).obj, false);
 
                         if (!tipo_validado.equals("Error")) {
-                            var x = new SyntaxNode("/", (SyntaxNode) val_peek(2).obj, (SyntaxNode)  val_peek(0).obj);
-                            x.setType(tipo_validado);
-                            yyval = new ParserVal(x);
+                            SyntaxNode factorNode = (SyntaxNode) val_peek(0).obj;
 
-                            if ((SyntaxNode) val_peek(0).obj != null && ((SyntaxNode) val_peek(0).obj).isLeaf()){
-                                String nombreCompleto = getNameSymbolTableVariables(((SyntaxNode)val_peek(0).obj).getName());
+                            if (factorNode != null) {
+                                if (factorNode.isLeaf()){
+                                    String nombreCompleto = getNameSymbolTableVariables(factorNode.getName());
 
-                                if (!nombreCompleto.equals("Error")) {
-                                    var t = SymbolTable.getInstance();
-                                    var entrada = t.getAttribute(nombreCompleto);
-                                    if (entrada.isPresent())
-                                        entrada.get().setUsadaDerecho(true);
+                                    if (!nombreCompleto.equals("Error")) {
+                                        var t = SymbolTable.getInstance();
+                                        var entrada = t.getAttribute(nombreCompleto);
+                                        if (entrada.isPresent()) {
+                                            Attribute entry = entrada.get();
+                                            entry.setUsadaDerecho(true);
+
+                                            if (entry.isActive()) {
+                                                final String value = entry.getValue();
+
+                                                var x = new SyntaxNode("/", (SyntaxNode) val_peek(2).obj, new SyntaxNode(value, entry.getType()));
+                                                x.setType(tipo_validado);
+                                                yyval = new ParserVal(x);
+                                            } else {
+                                                var x = new SyntaxNode("/", (SyntaxNode) val_peek(2).obj, (SyntaxNode)  val_peek(0).obj);
+                                                x.setType(tipo_validado);
+                                                yyval = new ParserVal(x);
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    if (factorNode.getName().equalsIgnoreCase("acceso")) {
+                                        Attribute memberAttr = getMemberVarAttribute(factorNode);
+                                        if (memberAttr != null && memberAttr.isActive()) {
+                                            final String value = memberAttr.getValue();
+
+                                            var x = new SyntaxNode("/", (SyntaxNode) val_peek(2).obj, new SyntaxNode(value, memberAttr.getType()));
+                                            x.setType(tipo_validado);
+                                            yyval = new ParserVal(x);
+                                        } else {
+                                            var x = new SyntaxNode("/", (SyntaxNode) val_peek(2).obj, (SyntaxNode)  val_peek(0).obj);
+                                            x.setType(tipo_validado);
+                                            yyval = new ParserVal(x);
+                                        }
+                                    }
                                 }
                             }
                         }
             }
 break;
 case 45:
-//#line 343 "grammar.y"
+//#line 418 "grammar.y"
 {
    			            logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un factor");
    			}
 break;
 case 46:
-//#line 346 "grammar.y"
+//#line 421 "grammar.y"
 {
    			            logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un factor");
             }
 break;
 case 47:
-//#line 349 "grammar.y"
+//#line 424 "grammar.y"
 {
    			            /* $$ = $1;*/
-   			            SyntaxNode node = (SyntaxNode) val_peek(1).obj;
+   			            SyntaxNode node = (SyntaxNode) val_peek(0).obj;
 
-                        if (node != null && node.isLeaf()){
-                            String nombreCompleto = getNameSymbolTableVariables(node.getName());
-                            /*String nombreCompleto = getNameSymbolTableVariables(((SyntaxNode)$1.obj).getName());*/
+                        if (node != null) {
+                            if (node.isLeaf()){
+                                String nombreCompleto = getNameSymbolTableVariables(node.getName());
 
-                            if (!nombreCompleto.equals("Error")) {
-                                yyval = val_peek(0);
+                                if (!nombreCompleto.equals("Error")) {
 
-                                var t = SymbolTable.getInstance();
-                                var entrada = t.getAttribute(nombreCompleto);
-                                if (entrada.isPresent())
-                                    entrada.get().setUsadaDerecho(true);
+                                    var t = SymbolTable.getInstance();
+                                    var entrada = t.getAttribute(nombreCompleto);
+                                    if (entrada.isPresent()) {
+                                        Attribute entry = entrada.get();
+                                        entry.setUsadaDerecho(true);
+
+                                        if (entry.isActive()) {
+                                            final String value = entry.getValue();
+
+                                            yyval = new ParserVal(new SyntaxNode(value, entry.getType()));
+                                        } else {
+                                            yyval = val_peek(0);
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (node.getName().equalsIgnoreCase("acceso")) {
+                                    Attribute memberAttr = getMemberVarAttribute(node);
+                                    if (memberAttr != null && memberAttr.isActive()) {
+                                        final String value = memberAttr.getValue();
+                                        yyval = new ParserVal(new SyntaxNode(value, memberAttr.getType()));
+                                    } else {
+                                        yyval = val_peek(0);
+                                    }
+                                }
                             }
                         }
    			}
 break;
 case 48:
-//#line 370 "grammar.y"
+//#line 465 "grammar.y"
 {yyval = val_peek(0);}
 break;
 case 49:
-//#line 371 "grammar.y"
+//#line 466 "grammar.y"
 {yyval = val_peek(1);}
 break;
 case 50:
-//#line 372 "grammar.y"
+//#line 467 "grammar.y"
 {
       		            String value = val_peek(0).sval;
 
@@ -1773,30 +1954,34 @@ case 50:
       		                var symbolType = getTypeSymbolTableVariables(value);
 
                             if (!symbolType.equals("Error")) {
-                                yyval = new ParserVal(new SyntaxNode(value, symbolType)); /* Crear un nodo para la constante*/
+                                String finalValue = "";
+                                if (symbolType.equals(UsesType.USHORT)) {
+                                    finalValue = value;
+                                } else {
+                                    finalValue = "-" + value;
+                                    SymbolTable.addSymbol(finalValue, TokenType.CONSTANT, symbolType, UsesType.CONSTANT, LexicalAnalyzer.getLine());
+                                }
+                                yyval = new ParserVal(new SyntaxNode(finalValue, symbolType)); /* Crear un nodo para la constante*/
                             }
       		            }
 
       		}
 break;
 case 51:
-//#line 386 "grammar.y"
+//#line 488 "grammar.y"
 {
                         String value = val_peek(0).sval;
 
                         value = processFloat(value, false);
 
                         if (!value.equals("Error")) {
-                            var symbolType = getTypeSymbolTableVariables(value);
-
-                            if (!symbolType.equals("Error")) {
-                                yyval = new ParserVal(new SyntaxNode(value, symbolType)); /* Crear un nodo para la constante*/
-                            }
+                            SymbolTable.addSymbol("-" + value, TokenType.CONSTANT, UsesType.FLOAT, UsesType.CONSTANT, LexicalAnalyzer.getLine());
+                            yyval = new ParserVal(new SyntaxNode("-" + value, UsesType.FLOAT)); /* Crear un nodo para la constante*/
                         }
             }
 break;
 case 52:
-//#line 399 "grammar.y"
+//#line 498 "grammar.y"
 {
                          var type = getTypeSymbolTableVariables(val_peek(0).sval);
                          var name = getNameSymbolTableVariables(val_peek(0).sval);
@@ -1809,7 +1994,7 @@ case 52:
             }
 break;
 case 53:
-//#line 409 "grammar.y"
+//#line 508 "grammar.y"
 {
                         String value = val_peek(0).sval;
 
@@ -1825,7 +2010,7 @@ case 53:
 			}
 break;
 case 54:
-//#line 422 "grammar.y"
+//#line 521 "grammar.y"
 {
       		            String value = val_peek(0).sval;
 
@@ -1841,13 +2026,13 @@ case 54:
 	        }
 break;
 case 55:
-//#line 435 "grammar.y"
+//#line 534 "grammar.y"
 {
                         yyval=val_peek(0);
             }
 break;
 case 56:
-//#line 438 "grammar.y"
+//#line 537 "grammar.y"
 {
                         var type = getTypeSymbolTableVariables(val_peek(0).sval);
                         var name = getNameSymbolTableVariables(val_peek(0).sval);
@@ -1860,37 +2045,37 @@ case 56:
             }
 break;
 case 57:
-//#line 452 "grammar.y"
+//#line 551 "grammar.y"
 { yyval = new ParserVal("=="); }
 break;
 case 58:
-//#line 453 "grammar.y"
+//#line 552 "grammar.y"
 { yyval = new ParserVal("<="); }
 break;
 case 59:
-//#line 454 "grammar.y"
+//#line 553 "grammar.y"
 { yyval = new ParserVal(">="); }
 break;
 case 60:
-//#line 455 "grammar.y"
+//#line 554 "grammar.y"
 { yyval = new ParserVal("<"); }
 break;
 case 61:
-//#line 456 "grammar.y"
+//#line 555 "grammar.y"
 { yyval = new ParserVal(">"); }
 break;
 case 62:
-//#line 457 "grammar.y"
+//#line 556 "grammar.y"
 { yyval = new ParserVal("!!"); }
 break;
 case 63:
-//#line 458 "grammar.y"
+//#line 557 "grammar.y"
 {
 			        logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": no puede realizarse una asignacion. Quizas queria poner '=='?");
 			        }
 break;
 case 64:
-//#line 464 "grammar.y"
+//#line 563 "grammar.y"
 {
                                     String tipo_validado = validarTipos((SyntaxNode) val_peek(2).obj, (SyntaxNode) val_peek(0).obj, false);
                                     if (!tipo_validado.equals("Error")) {
@@ -1899,35 +2084,35 @@ case 64:
             }
 break;
 case 65:
-//#line 470 "grammar.y"
+//#line 569 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": condicion no valida.");}
 break;
 case 66:
-//#line 471 "grammar.y"
+//#line 570 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": condicion no valida.");}
 break;
 case 67:
-//#line 475 "grammar.y"
+//#line 574 "grammar.y"
 { yyval = val_peek(1); }
 break;
 case 68:
-//#line 476 "grammar.y"
+//#line 575 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un '()'.");}
 break;
 case 69:
-//#line 477 "grammar.y"
+//#line 576 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un '('.");}
 break;
 case 70:
-//#line 478 "grammar.y"
+//#line 577 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un ')'."); yyval = val_peek(0); }
 break;
 case 71:
-//#line 479 "grammar.y"
+//#line 578 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta establecer una condicion.");}
 break;
 case 72:
-//#line 483 "grammar.y"
+//#line 582 "grammar.y"
 {
 			    SyntaxNode thenSyntaxNode = new SyntaxNode("THEN", (SyntaxNode)val_peek(1).obj, null);
                 yyval = new ParserVal(new SyntaxNode("IF", (SyntaxNode)val_peek(2).obj, thenSyntaxNode, null));
@@ -1935,7 +2120,7 @@ case 72:
                                                                  }
 break;
 case 73:
-//#line 488 "grammar.y"
+//#line 587 "grammar.y"
 { /* Usar "then" para distinguir los caminos... Then es el camino principal!*/
 		        SyntaxNode thenSyntaxNode = new SyntaxNode("THEN", (SyntaxNode)val_peek(3).obj, null);
 		        SyntaxNode elseSyntaxNode = new SyntaxNode("ELSE", (SyntaxNode)val_peek(1).obj, null);
@@ -1949,81 +2134,81 @@ case 73:
 		    }
 break;
 case 74:
-//#line 499 "grammar.y"
+//#line 598 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta la palabra reservada END_IF.");}
 break;
 case 75:
-//#line 500 "grammar.y"
+//#line 599 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta la palabra reservada END_IF.");}
 break;
 case 76:
-//#line 501 "grammar.y"
+//#line 600 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta palabra reservada ELSE");}
 break;
 case 77:
-//#line 502 "grammar.y"
+//#line 601 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta condicion o parentesis para la condicion.");}
 break;
 case 78:
-//#line 506 "grammar.y"
+//#line 605 "grammar.y"
 { yyval = val_peek(0); }
 break;
 case 79:
-//#line 507 "grammar.y"
+//#line 606 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": RETURN fuera de función.");}
 break;
 case 80:
-//#line 508 "grammar.y"
+//#line 607 "grammar.y"
 { yyval = val_peek(1) ; }
 break;
 case 81:
-//#line 509 "grammar.y"
+//#line 608 "grammar.y"
 {
                                                                     yyval = val_peek(1) ;
                                                                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": RETURN fuera de función.");
                                                                     }
 break;
 case 82:
-//#line 513 "grammar.y"
+//#line 612 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un '}'.");}
 break;
 case 83:
-//#line 517 "grammar.y"
+//#line 616 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": RETURN fuera de función.");}
 break;
 case 84:
-//#line 518 "grammar.y"
+//#line 617 "grammar.y"
 {yyval = val_peek(0);}
 break;
 case 85:
-//#line 522 "grammar.y"
+//#line 621 "grammar.y"
 { yyval = new ParserVal(new SyntaxNode("SecuenciaSentencias", (SyntaxNode)val_peek(1).obj, (SyntaxNode)val_peek(0).obj)); }
 break;
 case 86:
-//#line 523 "grammar.y"
+//#line 622 "grammar.y"
 { yyval = val_peek(0); }
 break;
 case 87:
-//#line 527 "grammar.y"
+//#line 626 "grammar.y"
 {
                     logger.logDebugSyntax("Bloque WHILE en la linea " + LexicalAnalyzer.getLine());
                     yyval = new ParserVal(new SyntaxNode("while", (SyntaxNode)val_peek(2).obj, (SyntaxNode)val_peek(0).obj));
             }
 break;
 case 88:
-//#line 531 "grammar.y"
+//#line 630 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta definir un bloque de sentencias.");
             }
 break;
 case 89:
-//#line 534 "grammar.y"
+//#line 633 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta la palabra 'DO'.");
             }
 break;
 case 90:
-//#line 542 "grammar.y"
+//#line 641 "grammar.y"
 {
                     logger.logDebugSyntax("VOID en la linea " + LexicalAnalyzer.getLine());
                     String nombreFuncion = val_peek(3).sval;
@@ -2032,19 +2217,19 @@ case 90:
             }
 break;
 case 91:
-//#line 548 "grammar.y"
+//#line 647 "grammar.y"
 {
                     logger.logErrorSyntax("VOID en la linea " + LexicalAnalyzer.getLine() + ": falta un '}'");
             }
 break;
 case 92:
-//#line 551 "grammar.y"
+//#line 650 "grammar.y"
 {
                     logger.logErrorSyntax("VOID en la linea " + LexicalAnalyzer.getLine() + ": falta un '{'");
             }
 break;
 case 93:
-//#line 557 "grammar.y"
+//#line 656 "grammar.y"
 {
 		        logger.logDebugSyntax("VOID en la linea " + LexicalAnalyzer.getLine());
 		        var t = SymbolTable.getInstance();
@@ -2078,7 +2263,7 @@ case 93:
 		    }
 break;
 case 94:
-//#line 588 "grammar.y"
+//#line 687 "grammar.y"
 {
                     logger.logDebugSyntax("VOID en la linea " + LexicalAnalyzer.getLine());
                     var t = SymbolTable.getInstance();
@@ -2098,63 +2283,63 @@ case 94:
             }
 break;
 case 95:
-//#line 605 "grammar.y"
+//#line 704 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el nombre de la funcion");
             }
 break;
 case 96:
-//#line 608 "grammar.y"
+//#line 707 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el nombre de la funcion");
             }
 break;
 case 97:
-//#line 611 "grammar.y"
+//#line 710 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": faltan los parentesis '(' ')'.");
             }
 break;
 case 98:
-//#line 614 "grammar.y"
+//#line 713 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": faltan los parentesis '(' ')'.");
             }
 break;
 case 99:
-//#line 617 "grammar.y"
+//#line 716 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el nombre de la funcion.");
             }
 break;
 case 100:
-//#line 623 "grammar.y"
+//#line 722 "grammar.y"
 { yyval = val_peek(0); }
 break;
 case 101:
-//#line 624 "grammar.y"
+//#line 723 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": Parametro mal declarado. Solo es posible declarar un único parámetro");}
 break;
 case 102:
-//#line 628 "grammar.y"
+//#line 727 "grammar.y"
 {
                     yyval = new ParserVal(new SyntaxNode(val_peek(0).sval, val_peek(1).sval));
             }
 break;
 case 103:
-//#line 631 "grammar.y"
+//#line 730 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el tipo del parametro.");
             }
 break;
 case 104:
-//#line 634 "grammar.y"
+//#line 733 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el nombre del parametro.");
             }
 break;
 case 105:
-//#line 640 "grammar.y"
+//#line 739 "grammar.y"
 {
         SyntaxNode sentenciasSyntaxNode = (SyntaxNode)val_peek(1).obj;
         SyntaxNode returnSyntaxNode = new SyntaxNode("RETURN");
@@ -2163,172 +2348,175 @@ case 105:
     }
 break;
 case 106:
-//#line 646 "grammar.y"
+//#line 745 "grammar.y"
 {
         SyntaxNode returnSyntaxNode = new SyntaxNode("RETURN");
         yyval = new ParserVal(new SyntaxNode("Bloque de sentencias2", null, returnSyntaxNode));
     }
 break;
 case 107:
-//#line 650 "grammar.y"
+//#line 749 "grammar.y"
 {
         logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una sentencia 'RETURN' en el bloque 'void'.");
         yyval = new ParserVal(new SyntaxNode("Bloque de sentencias3", (SyntaxNode)val_peek(0).obj, null));
     }
 break;
 case 108:
-//#line 656 "grammar.y"
+//#line 755 "grammar.y"
 {
         /* Aquí, simplemente expandimos la secuencia de sentencias sin un nodo intermedio*/
         yyval = new ParserVal(new SyntaxNode("Sentencias", (SyntaxNode)val_peek(1).obj, (SyntaxNode)val_peek(0).obj));
     }
 break;
 case 109:
-//#line 660 "grammar.y"
+//#line 759 "grammar.y"
 {
         yyval = val_peek(0);
     }
 break;
 case 110:
-//#line 666 "grammar.y"
+//#line 765 "grammar.y"
 { yyval = val_peek(0); }
 break;
 case 111:
-//#line 667 "grammar.y"
+//#line 766 "grammar.y"
 { yyval = val_peek(0); }
 break;
 case 112:
-//#line 668 "grammar.y"
+//#line 767 "grammar.y"
 { yyval = val_peek(0); }
 break;
 case 113:
-//#line 669 "grammar.y"
+//#line 768 "grammar.y"
 { yyval = val_peek(0); }
 break;
 case 114:
-//#line 670 "grammar.y"
+//#line 769 "grammar.y"
 { yyval = val_peek(0); }
 break;
 case 115:
-//#line 671 "grammar.y"
+//#line 770 "grammar.y"
 { yyval = val_peek(0); }
 break;
 case 117:
-//#line 676 "grammar.y"
+//#line 775 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','.");}
 break;
 case 119:
-//#line 681 "grammar.y"
+//#line 780 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','.");}
 break;
 case 120:
-//#line 685 "grammar.y"
+//#line 784 "grammar.y"
 {
                     logger.logDebugSyntax("Bloque WHILE en la linea " + LexicalAnalyzer.getLine());
                     yyval = new ParserVal(new SyntaxNode("while", (SyntaxNode)val_peek(2).obj, (SyntaxNode)val_peek(0).obj));
             }
 break;
 case 121:
-//#line 689 "grammar.y"
+//#line 788 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta definir un bloque de sentencias.");
             }
 break;
 case 122:
-//#line 692 "grammar.y"
+//#line 791 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta la palabra 'DO'.");
                     yyval = new ParserVal(new SyntaxNode("while", (SyntaxNode)val_peek(1).obj, (SyntaxNode)val_peek(0).obj));
             }
 break;
 case 123:
-//#line 699 "grammar.y"
+//#line 798 "grammar.y"
 {
                     logger.logDebugSyntax("Bloque IF en la linea " + LexicalAnalyzer.getLine());
-                    yyval = new ParserVal(new SyntaxNode("if", (SyntaxNode)val_peek(2).obj, (SyntaxNode)val_peek(1).obj, null));
+
+                    SyntaxNode thenSyntaxNode = new SyntaxNode("THEN", (SyntaxNode)val_peek(1).obj, null);
+                    yyval = new ParserVal(new SyntaxNode("IF", (SyntaxNode)val_peek(2).obj, thenSyntaxNode, null));
             }
 break;
 case 124:
-//#line 703 "grammar.y"
+//#line 804 "grammar.y"
 {
-                    logger.logDebugSyntax("Bloque IF en la linea " + LexicalAnalyzer.getLine());
-
                     /* Crear nodos para 'then' y 'else'*/
-                    SyntaxNode thenSyntaxNode = new SyntaxNode("then", (SyntaxNode)val_peek(3).obj, null);
-                    SyntaxNode elseSyntaxNode = new SyntaxNode("else", (SyntaxNode)val_peek(1).obj, null);
+                    SyntaxNode thenSyntaxNode = new SyntaxNode("THEN", (SyntaxNode)val_peek(3).obj, null);
+                    SyntaxNode elseSyntaxNode = new SyntaxNode("ELSE", (SyntaxNode)val_peek(1).obj, null);
 
                     /* Crear un nodo para el cuerpo del 'if' que contiene 'then' y 'else'*/
-                    SyntaxNode cuerpoIf = new SyntaxNode("cuerpoIf", thenSyntaxNode, elseSyntaxNode);
+                    SyntaxNode camino = new SyntaxNode("Camino", thenSyntaxNode, elseSyntaxNode);
 
                     /* Crear el nodo 'if' con la condici?n y el cuerpo como hijos*/
-                    yyval = new ParserVal(new SyntaxNode("if", (SyntaxNode)val_peek(4).obj, cuerpoIf));
-                    logger.logDebugSyntax("Bloque IF en la linea " + LexicalAnalyzer.getLine());
+                    SyntaxNode ifSyntaxNode = new SyntaxNode("IF", (SyntaxNode) val_peek(4).obj, camino);
+
+                    /* Crear un nodo 'if' con la condición y los nodos 'then' y 'else' como hijos*/
+                    yyval = new ParserVal(ifSyntaxNode);
+                    logger.logDebugSyntax("Bloque IF-ELSE en la linea " + LexicalAnalyzer.getLine());
             }
 break;
 case 125:
-//#line 717 "grammar.y"
+//#line 819 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta la palabra reservada END_IF.");
             }
 break;
 case 126:
-//#line 720 "grammar.y"
+//#line 822 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta la palabra reservada END_IF.");
             }
 break;
 case 127:
-//#line 723 "grammar.y"
+//#line 825 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta palabra reservada ELSE");
             }
 break;
 case 128:
-//#line 726 "grammar.y"
+//#line 828 "grammar.y"
 {
                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta condicion o parentesis para la condicion.");
             }
 break;
 case 129:
-//#line 732 "grammar.y"
+//#line 834 "grammar.y"
 { yyval = new ParserVal(new SyntaxNode("Sentencia", (SyntaxNode)val_peek(0).obj)); }
 break;
 case 130:
-//#line 733 "grammar.y"
+//#line 835 "grammar.y"
 {
 		        SyntaxNode returnSyntaxNode = new SyntaxNode("RETURN");
 		        yyval = new ParserVal(new SyntaxNode("Bloque de sentencias4", null, returnSyntaxNode));
 		    }
 break;
 case 131:
-//#line 737 "grammar.y"
+//#line 839 "grammar.y"
 {
 		        SyntaxNode returnSyntaxNode = new SyntaxNode("RETURN");
 		        yyval = new ParserVal(new SyntaxNode("Bloque de sentencias5", null, returnSyntaxNode));
 		    }
 break;
 case 132:
-//#line 741 "grammar.y"
+//#line 843 "grammar.y"
 { yyval = new ParserVal(new SyntaxNode("BloqueSentenciasConReturn", (SyntaxNode)val_peek(1).obj)); }
 break;
 case 133:
-//#line 742 "grammar.y"
+//#line 844 "grammar.y"
 { yyval = new ParserVal(new SyntaxNode("BloqueSentenciasConReturn", (SyntaxNode)val_peek(1).obj, (SyntaxNode)val_peek(2).obj)); }
 break;
 case 134:
-//#line 743 "grammar.y"
+//#line 845 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un '}'.");}
 break;
 case 135:
-//#line 747 "grammar.y"
+//#line 849 "grammar.y"
 { yyval = new ParserVal(new SyntaxNode("BloqueSentenciasConReturn", (SyntaxNode)val_peek(0).obj)); }
 break;
 case 136:
-//#line 748 "grammar.y"
+//#line 850 "grammar.y"
 { yyval = new ParserVal(new SyntaxNode("Sentencia", (SyntaxNode)val_peek(0).obj)); }
 break;
 case 137:
-//#line 753 "grammar.y"
+//#line 855 "grammar.y"
 { 
             		/*$$ = $3;*/
 
@@ -2340,27 +2528,32 @@ case 137:
             		}
 break;
 case 138:
-//#line 762 "grammar.y"
+//#line 864 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un }.");}
 break;
 case 140:
-//#line 765 "grammar.y"
+//#line 867 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','.");}
 break;
 case 141:
-//#line 768 "grammar.y"
-{
-            			logger.logDebugSyntax("FORWARD DECLARATION en la linea " + LexicalAnalyzer.getLine());}
+//#line 871 "grammar.y"
+{ logger.logDebugSyntax("FORWARD DECLARATION en la linea " + LexicalAnalyzer.getLine()); }
 break;
 case 142:
-//#line 771 "grammar.y"
+//#line 874 "grammar.y"
 {
 		        logger.logDebugSyntax("CLASE en la linea " + LexicalAnalyzer.getLine());
 		        String nombreClase = val_peek(0).sval + ":" + Parser.ambito;
 		
 		        /* Registrar la clase en la tabla de sÃ­mbolos*/
 		        SymbolTable tablaSimbolos = SymbolTable.getInstance();
-		        tablaSimbolos.insertAttribute(new Attribute(Parser.ID, nombreClase, "Clase", UsesType.CLASE, LexicalAnalyzer.getLine()));
+
+		        Attribute newAttr = new Attribute(Parser.ID, nombreClase, "Clase", UsesType.CLASE, LexicalAnalyzer.getLine());
+		        tablaSimbolos.insertAttribute(newAttr);
+
+		        parseAndAddToClassMap(newAttr.getToken());
+
+		        currentClass = nombreClase;
 		
 		        nuevoAmbito(val_peek(0).sval); /* Agrega el nuevo Ã¡mbito de la clase*/
 
@@ -2368,70 +2561,85 @@ case 142:
 		    }
 break;
 case 143:
-//#line 783 "grammar.y"
+//#line 892 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el ID");}
 break;
 case 144:
-//#line 787 "grammar.y"
+//#line 896 "grammar.y"
 {
                               logger.logDebugSyntax("Declaración2 de variables en la linea " + LexicalAnalyzer.getLine());
                             }
 break;
 case 147:
-//#line 792 "grammar.y"
+//#line 901 "grammar.y"
 {
                         logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": la sentencia declarada no es permitida fuera de un metodo.");
                         }
 break;
 case 148:
-//#line 798 "grammar.y"
+//#line 907 "grammar.y"
 {
                if ((SyntaxNode) val_peek(1).obj != null)
                     yyval = new ParserVal(new SyntaxNode("BloqueClass", (SyntaxNode) val_peek(2).obj, (SyntaxNode) val_peek(1).obj));
             }
 break;
 case 149:
-//#line 802 "grammar.y"
+//#line 911 "grammar.y"
 {
                                                 logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','.");
                                              }
 break;
 case 150:
-//#line 805 "grammar.y"
+//#line 914 "grammar.y"
 {
                 if ((SyntaxNode) val_peek(1).obj != null)
                     yyval = new ParserVal(new SyntaxNode("BloqueClass", (SyntaxNode) val_peek(2).obj, (SyntaxNode) val_peek(1).obj));
             }
 break;
 case 151:
-//#line 809 "grammar.y"
+//#line 918 "grammar.y"
 {
                                                     logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','.");
                                                    }
 break;
 case 152:
-//#line 812 "grammar.y"
+//#line 921 "grammar.y"
 {
 		        yyval = new ParserVal(new SyntaxNode("BloqueClase" , (SyntaxNode) val_peek(0).obj, (SyntaxNode) val_peek(1).obj));
 		    }
 break;
 case 153:
-//#line 815 "grammar.y"
+//#line 924 "grammar.y"
 {yyval = val_peek(1);}
 break;
 case 154:
-//#line 816 "grammar.y"
+//#line 925 "grammar.y"
 {
                                      logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','.");
                                      yyval = val_peek(1);
                                   }
 break;
 case 155:
-//#line 823 "grammar.y"
-{ logger.logDebugSyntax("Herencia por composicion en la linea " + LexicalAnalyzer.getLine());}
+//#line 932 "grammar.y"
+{
+                if (!esTipoClaseValido(val_peek(0).sval)) {
+                    yyerror("Tipo de clase no declarado: " + val_peek(0).sval);
+                } else {
+                  logger.logDebugSyntax("Herencia por composicion en la linea " + LexicalAnalyzer.getLine());
+
+                  ArrayList<String> inheritanceClasses = compositionMap.get(currentClass);
+                  final String classFullName = getNameSymbolTableVariables(val_peek(0).sval);
+                  if (inheritanceClasses == null) {
+                    inheritanceClasses = new ArrayList<>();
+                    compositionMap.put(currentClass, inheritanceClasses);
+                  }
+
+                  inheritanceClasses.add(classFullName);
+                }
+            }
 break;
 case 156:
-//#line 827 "grammar.y"
+//#line 951 "grammar.y"
 {
                     logger.logDebugSyntax("Declaración 3de variables en la linea " + LexicalAnalyzer.getLine());
                     if (!esTipoClaseValido(val_peek(1).sval)) {
@@ -2440,6 +2648,16 @@ case 156:
                     else {
                         var t = SymbolTable.getInstance();
                         String tipoVariable = val_peek(1).sval;
+
+                        ArrayList<Attribute> classAttributes = getClassMembers(tipoVariable);
+                        ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(tipoVariable));
+
+                        if (parentClasses != null) {
+                          for (String parentClass : parentClasses) {
+                            classAttributes.addAll(getClassMembers(parentClass));
+                          }
+                        }
+
                         for (String varName : lista_variables) {
                             String nombreCompleto = varName;
                             var entrada = t.getAttribute(nombreCompleto);
@@ -2451,7 +2669,14 @@ case 156:
                                     yyerror("La variable declarada ya existe " + (varName.contains(":") ? varName.substring(0, varName.indexOf(':')) : "en ambito global"));
                                 }
                             } else {
-                                t.insertAttribute(new Attribute(Parser.ID, nombreCompleto, tipoVariable, UsesType.CLASS_VAR, LexicalAnalyzer.getLine()));
+                                Attribute classVarAttr = new Attribute(Parser.ID, varName, tipoVariable, UsesType.CLASS_VAR, LexicalAnalyzer.getLine());
+                                t.insertAttribute(classVarAttr);
+
+                                for (Attribute attr : classAttributes) {
+                                    final String attrName = attr.getToken() + ":" + varName;
+                                    Attribute memberAttr = new Attribute(Parser.ID, attrName, attr.getType(), attr.getUso(), LexicalAnalyzer.getLine());
+                                    t.insertAttribute(memberAttr);
+                                }
                             }
                         }
                         lista_variables.clear();
@@ -2459,7 +2684,7 @@ case 156:
                   }
 break;
 case 157:
-//#line 855 "grammar.y"
+//#line 996 "grammar.y"
 {
 		        logger.logDebugSyntax("Acceso en la linea " + LexicalAnalyzer.getLine());
 
@@ -2477,13 +2702,13 @@ case 157:
 		    }
 break;
 case 158:
-//#line 870 "grammar.y"
+//#line 1011 "grammar.y"
 {
 		        logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el ID");
 		    }
 break;
 case 159:
-//#line 879 "grammar.y"
+//#line 1020 "grammar.y"
 {
                         logger.logDebugSyntax("Llamado en la linea " + LexicalAnalyzer.getLine());
         				String nombreMetodo = getNameSymbolTableVariables(val_peek(2).sval);
@@ -2501,7 +2726,7 @@ case 159:
 		    }
 break;
 case 160:
-//#line 894 "grammar.y"
+//#line 1035 "grammar.y"
 {
    			        /*    SyntaxNode node = (SyntaxNode) val_peek(1).obj;*/
    			            logger.logDebugSyntax("Llamado en la linea " + LexicalAnalyzer.getLine());
@@ -2532,7 +2757,7 @@ case 160:
             }
 break;
 case 161:
-//#line 922 "grammar.y"
+//#line 1063 "grammar.y"
 {
                         /*SyntaxNode llamadaSyntaxNode = new SyntaxNode("LlamadoFuncion", new SyntaxNode($1.sval), (SyntaxNode)$3.obj);*/
 				        String nombreInstancia = getNameSymbolTableVariables(val_peek(4).sval);
@@ -2553,7 +2778,7 @@ case 161:
 		    }
 break;
 case 162:
-//#line 940 "grammar.y"
+//#line 1081 "grammar.y"
 {
 				        logger.logDebugSyntax("Llamado en la linea " + LexicalAnalyzer.getLine());
    			            SyntaxNode node = (SyntaxNode) val_peek(1).obj;
@@ -2581,24 +2806,24 @@ case 162:
 		    }
 break;
 case 163:
-//#line 969 "grammar.y"
+//#line 1110 "grammar.y"
 {
                                     logger.logDebugSyntax("Sentencia PRINT en la linea " + LexicalAnalyzer.getLine());
                                     yyval = new ParserVal( new SyntaxNode("Print", new SyntaxNode(val_peek(0).sval, "CADENA"), null, "CADENA"));
                                }
 break;
 case 164:
-//#line 973 "grammar.y"
+//#line 1114 "grammar.y"
 {
 			                        logger.logDebugSyntax("Sentencia PRINT en la linea " + LexicalAnalyzer.getLine());
 			                        yyval = new ParserVal( new SyntaxNode("Print", (SyntaxNode) val_peek(0).obj, null, "Factor" ));
 			                     }
 break;
 case 165:
-//#line 977 "grammar.y"
+//#line 1118 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el contenido de la impresion.");}
 break;
-//#line 2525 "Parser.java"
+//#line 2750 "Parser.java"
 //########## END OF USER-SUPPLIED ACTIONS ##########
     }//switch
     //#### Now let's reduce... ####

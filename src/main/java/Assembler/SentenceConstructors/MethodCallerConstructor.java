@@ -3,9 +3,13 @@ package Assembler.SentenceConstructors;
 import AnalizadorLexico.Attribute;
 import AnalizadorLexico.Enums.UsesType;
 import AnalizadorLexico.SymbolTable;
+import AnalizadorSintactico.Parser;
 import ArbolSintactico.SyntaxNode;
 
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static AnalizadorSintactico.Parser.classFullNames;
 
 public class MethodCallerConstructor implements CodeConstructor {
 
@@ -14,7 +18,7 @@ public class MethodCallerConstructor implements CodeConstructor {
         SyntaxNode leftChild = node.getLeftChild();
         SyntaxNode rightChild = node.getRightChild();
 
-        if (leftChild == null || leftChild == null)
+        if (leftChild == null || rightChild == null)
             return "";
 
         String returnCode = "";
@@ -89,19 +93,45 @@ public class MethodCallerConstructor implements CodeConstructor {
     }
 
     private static String getFullFuncName(final String funcName, SyntaxNode objectNode) {
-        ArrayList<Attribute> entries = new ArrayList<>(SymbolTable.getTableMap().values());
-        Optional<Attribute> objectAttr = SymbolTable.getInstance().getAttribute(objectNode.getName());
+        // Obtener todas las entradas de atributos de la tabla de símbolos
+        List<Attribute> entries = new ArrayList<>(SymbolTable.getTableMap().values());
 
+        // Obtener el atributo del objeto y su tipo
+        Optional<Attribute> objectAttr = SymbolTable.getInstance().getAttribute(objectNode.getName());
+        final String objectType = objectAttr.map(Attribute::getType).orElse("");
+
+        // Obtener las clases padre del tipo del objeto y agregar el tipo del objeto
+        List<String> parentClasses = Parser.compositionMap.get(classFullNames.get(objectType));
+        if (parentClasses == null) {
+            parentClasses = new ArrayList<>();
+        }
+        parentClasses.add(objectType);
+
+        // Crear un Set con solo el nombre de la clase
+        Set<String> parentClassPrefixes = parentClasses.stream()
+                .map(parentClass -> parentClass.split(":")[0])
+                .collect(Collectors.toSet());
+
+        // Verificar si existe un token que cumpla con las condiciones
         if (objectAttr.isPresent()) {
             for (Attribute entry : entries) {
                 final String token = entry.getToken();
-                if (token.startsWith(funcName + ":") && token.contains(objectAttr.get().getType())) {
+
+                // Verificar si el token contiene alguna de las partes relevantes de parentClasses
+                boolean containsClass = parentClassPrefixes.stream()
+                        .anyMatch(token::contains);
+
+                // Comprobar si el token empieza con funcName y contiene una clase padre
+                if (token.startsWith(funcName + ":") && containsClass) {
                     return token;
                 }
             }
         }
+
         return "";
     }
+
+
 
     private static String loadCorrectMembers(SyntaxNode objectNode, SyntaxNode funcNode) {
         // Loads to the function used variables the values from the caller object
