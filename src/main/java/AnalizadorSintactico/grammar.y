@@ -1130,8 +1130,8 @@ public static Map<String, String> classFullNames = new HashMap<>();
 public static Map<String, ArrayList<String>> compositionMap = new HashMap<>();
 public static String currentClass = "";
 
-private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
-    ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(tipoClase));
+private boolean metodoExisteEnClase(String classType, String methodName) {
+    ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(classType));
 
     for (Map.Entry<String, Attribute> entry : SymbolTable.getTableMap().entrySet()) {
         Attribute attribute = entry.getValue();
@@ -1140,7 +1140,7 @@ private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
           parentClasses = new ArrayList<>();
         }
 
-        parentClasses.add(tipoClase);
+        parentClasses.add(classType);
 
         boolean containsClass = false;
         for (String parentClass : parentClasses) { // Buscamos en clase y en sus padres
@@ -1153,8 +1153,8 @@ private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
         if (attribute.getUso().equals(UsesType.FUNCTION) && containsClass) {
             // Extraer el nombre del método del token
             String metodo = attribute.getToken().split(":")[0];
-            // Verificar si el nombre del método coincide con el nombre del método buscado
-            if (metodo.equals(nombreMetodo)) {
+            // Verificar si el nombre del método encontrado coincide con el nombre del método buscado
+            if (metodo.equals(methodName)) {
                 return true;
             }
         }
@@ -1162,22 +1162,30 @@ private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
     return false;
 }
 
-private boolean metodoExiste(String tipoClase, String nombreMetodo) {
+private boolean metodoExiste(String classType, String funcName) {
+    // Check for recursion...  put method name last!
+    final int index = funcName.indexOf(':');
+    final String swappedClass = funcName.substring(index + 1) + ":" + funcName.substring(0, index);
+
+    if (swappedClass.equals(classType)) {
+      return true;
+    }
+
     for (Map.Entry<String, Attribute> entry : SymbolTable.getTableMap().entrySet()) {
         Attribute attribute = entry.getValue();
 
-        if (attribute.getUso().equals(UsesType.FUNCTION) && attribute.getToken().contains(tipoClase)) {
-            // Extraer el nombre del mÃ©todo del token
+        if (attribute.getUso().equals(UsesType.FUNCTION) && attribute.getToken().contains(classType)) {
+            // Extraer el nombre del metodo del token
             String metodo = attribute.getToken();
-            //System.out.println("comparo: " + metodo + " con " + nombreMetodo + "mi ambito es: " + Parser.ambito);
-            // Verificar si el nombre del mÃ©todo coincide con el nombre del mÃ©todo buscado
-            if (metodo.equals(nombreMetodo)) {
+            // Verificar si el nombre del metodo encontrado coincide con el nombre del metodo buscado
+            if (metodo.equals(funcName)) {
                 return true;
             }
         }
     }
     return false;
 }
+
 void addFuncion(SyntaxNode f){
 	if (!arbolFunciones.contains(f))
 		arbolFunciones.add(f);
@@ -1565,9 +1573,9 @@ public static void checkFunctionCall(String funcName, String parameterName) {
       if (functionVariable.getKey().startsWith(funcName + ":")) {
         var funcAttr = functionVariable.getValue();
         var paramAttr = funcAttr.getParameter();
-        var paramEntry = SymbolTable.getInstance().getAttribute(parameterName);
 
         if (paramAttr != null) {
+          var paramEntry = SymbolTable.getInstance().getAttribute(parameterName);
           if (paramEntry.isPresent() && !paramAttr.getType().equals( paramEntry.get().getType() )) {
               yyerror("El parametro es del tipo incorrecto.");
           }

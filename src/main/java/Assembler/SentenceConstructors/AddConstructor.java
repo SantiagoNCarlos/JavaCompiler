@@ -34,11 +34,13 @@ public class AddConstructor implements CodeConstructor{
             case UsesType.USHORT ->
                 returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
                              "\tADD AL, " + rightNodeToken + "\n" +
-                             "\tMOV " + auxVariableName + ",AL"; // Store the 8 bit USHORT mul in aux variable.
+                             "\tMOV " + auxVariableName + ",AL" + "\n" + // Store the 8 bit USHORT mul in aux variable.
+                             "\tJC ErrorOverflow\n"; // Gets triggered when an overflow without signed numbers occurs...
             case UsesType.LONG ->
                 returnCode = "\tMOV EAX, " + leftNodeToken + "\n" +
                             "\tADD EAX, " + rightNodeToken + "\n" +
-                            "\tMOV " + auxVariableName + ",EAX"; // Store the 32 bit LONG mul in aux variable.
+                            "\tMOV " + auxVariableName + ",EAX" + "\n" + // Store the 32 bit LONG mul in aux variable.
+                            "\tJO ErrorOverflow\n"; // Gets triggered when an overflow with signed numbers occurs...
             case UsesType.FLOAT ->
                 returnCode = "\tFLD " + leftNodeToken.replace(".", "_") + "\n" + // Load left node to FPU stack
                         "\tFLD " + rightNodeToken.replace(".", "_") + "\n" + // Load right node to FPU stack

@@ -1,28 +1,47 @@
 {
-    USHORT b,
+    FLOAT a;b;c,
+    a = 1.0,
+    b = 2.0,
+
+    c = a * b,
+}
 
 
-    IF (b !! 0_us) {
-        b = 5_us,
-    } ELSE {
-                 b = 1_us,
-             }
-    END_IF,
 
-        VOID act() { *{ declaracion de metodo }*
-            IF (b !! 0_us) {
+    *{
+        USHORT variable,
+        VOID act(USHORT b) {
+            IF (b == 8_us) {
                 b = 5_us,
             } ELSE {
-                b = 1_us,
+                b++,
+                act(b),
             }
             END_IF,
             RETURN,
         },
 
+        variable = 3_us,
+        act(variable),
 
-}
 
-    *{
+    CLASS cc {
+              USHORT b,
+              VOID act(USHORT b) {
+                  IF (b == 8_us) {
+                      b = 5_us,
+                  } ELSE {
+                      b++,
+                      act(b),
+                  }
+                  END_IF,
+                  RETURN,
+              },
+          }
+
+              FLOAT x,
+
+              x = 1.17549435E-38 + 1.17549435E-38,
 
 	WHILE ( a + b == c - d ) DO {
         a = b + c,
@@ -46,4 +65,6 @@
     }
     ELSE
         a = b - c,
-    END_IF,}*
+    END_IF,
+
+    }*

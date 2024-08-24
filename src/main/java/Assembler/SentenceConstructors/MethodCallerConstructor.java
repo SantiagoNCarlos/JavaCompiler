@@ -30,7 +30,9 @@ public class MethodCallerConstructor implements CodeConstructor {
             if (parameterNode.getName().equalsIgnoreCase("parametro")) {
                 funcName = getFullFuncName(rightChild.getName(), leftChild);
 
-                returnCode = loadCorrectMembers(node.getLeftChild(), node.getRightChild());
+                returnCode += "\tMOV EAX, OFFSET FUNCTION_" + funcName.replace(":", "_") + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
+
+                returnCode += loadCorrectMembers(node.getLeftChild(), node.getRightChild());
 
                 final String parameterType = parameterNode.getLeftChild().getType();
                 final String parameterName = getParameterName(parameterNode.getLeftChild());
@@ -63,20 +65,14 @@ public class MethodCallerConstructor implements CodeConstructor {
             }
         } else { // Function does not receive any parameters!
             funcName = getFullFuncName(rightChild.getName(), leftChild);
-            returnCode = loadCorrectMembers(node.getLeftChild(), node.getRightChild());
+            returnCode = "\tMOV EAX, OFFSET FUNCTION_" + funcName.replace(":", "_") + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
+            returnCode += loadCorrectMembers(node.getLeftChild(), node.getRightChild());
         }
 
         returnCode += "\n\tCALL FUNCTION_" + funcName.replace(":", "_") + "\n";
 
         return returnCode;
     }
-
-//    private static String getParameterName(SyntaxNode parameterNode) {
-//        if (parameterNode.getName().equalsIgnoreCase("Acceso")) {
-//            return AccessConstructor.generateStructureCode(parameterNode);
-//        }
-//        return parameterNode.getLeftChild().getName().replace(":", "_");
-//    }
 
     private static String getParameterName(SyntaxNode parameterNode) {
         if (parameterNode.getName().equalsIgnoreCase("Acceso")) {

@@ -37,9 +37,12 @@ public class MulConstructor implements CodeConstructor {
                          "\tMOV " + auxVariableName + ",EAX"; // Store the 32 bit LONG mul in aux variable.
             case UsesType.FLOAT ->
                 returnCode = "\tFLD " + leftNodeToken.replace(".", "_").replace(":", "_") + "\n" + // Load left node to FPU stack
-                         "\tFLD " + rightNodeToken.replace(".", "_").replace(":", "_") + "\n" + // Load right node to FPU stack
-                         "\tFMUL \n" + // Multiply...
-                         "\tFSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
+                        "\tFLD " + rightNodeToken.replace(".", "_").replace(":", "_") + "\n" + // Load right node to FPU stack
+                        "\tFMUL \n" + // Multiply...
+                        "\tFSTSW AX\n" + // Store FPU status word in AX
+                        "\tTEST AX, 0000000000000100b\n" + // Test for overflow bit.
+                        "\tJNZ _ProductOverflowError_\n" + // Jump to overflow handler if overflow occurred
+                        "\tFSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
         }
 
         SymbolTable.addSymbol(auxVariableName, TokenType.ID, node.getType(), UsesType.AUX_VAR);

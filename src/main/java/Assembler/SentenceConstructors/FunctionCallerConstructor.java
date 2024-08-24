@@ -25,6 +25,9 @@ public class FunctionCallerConstructor implements CodeConstructor {
                 if (leftChild != null) {
                     funcName = leftChild.getName();
 
+                    // Add realtime check for recursiveness! If it's the first time you enter a function, set it's dir as current_function!
+                    returnCode = "\tMOV EAX, OFFSET FUNCTION_" + funcName.replace(":", "_") + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
+
                     if (rightChild.getLeftChild() != null) {
                         final String parameterType = rightChild.getLeftChild().getType();
                         final String parameterName = getParameterName(rightChild.getLeftChild());
@@ -42,15 +45,15 @@ public class FunctionCallerConstructor implements CodeConstructor {
 
                         switch (parameterType) {
                             case UsesType.USHORT -> {
-                                returnCode = "\tMOV AL, " + parameterName + "\n" + // Load the 8-bit value into AL
+                                returnCode += "\tMOV AL, " + parameterName + "\n" + // Load the 8-bit value into AL
                                              "\tMOV " + auxVariableName + ",AL\n";//  // Zero-extend AX to EAX (32-bit register) to maintain alignment
                             }
                             case UsesType.LONG -> {
-                                returnCode = "\tMOV EAX, " + parameterName + "\n" +
+                                returnCode += "\tMOV EAX, " + parameterName + "\n" +
                                              "\tMOV " + auxVariableName + ",EAX"; // Store the 32 bit LONG mul in aux variable.
                             }
                             case UsesType.FLOAT -> {
-                                returnCode = "\tFLD " + parameterName + "\n" + // Load left node to FPU stack
+                                returnCode += "\tFLD " + parameterName + "\n" + // Load left node to FPU stack
                                             "\tFSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
                             }
                          }

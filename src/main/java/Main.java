@@ -62,12 +62,14 @@ public class Main {
 					// Generate code
 					AssemblerCodeManager codeManager = new AssemblerCodeManager(testDir);
 
-					codeManager.generateCode(Parser.padre);
+
 
 					for (SyntaxNode functionNode : Parser.getArbolFunciones()) {
 //						SyntaxTreeDecoder.exploreTree(s);
 						codeManager.generateCode(functionNode);
 					}
+
+					codeManager.generateCode(Parser.padre);
 
 					codeManager.assemblerFileCreation();
 				} else {

@@ -1,4 +1,4 @@
-.586
+.386
 .model flat, stdcall
 option casemap:none
 
@@ -18,50 +18,47 @@ printf PROTO C :PTR BYTE, :VARARG
 	formatStringLong db "%d", 0
 	formatStringUShort db "%hu", 0
 	formatStringFloat db "%f", 0
+	_current_function_ DD 0
+	SumOverflowErrorMsg DB "Overflow detected in a INTEGER SUM operation", 10, 0
+	ProductOverflowErrorMsg DB "Overflow detected in a FLOAT PRODUCT operation", 10, 0
+	RecursionErrorMsg DB "Recursive call detected", 10, 0
 
-	c_5_us DB 5
-	c_0_us DB 0
-	c_1_us DB 1
-	b_global DB ?
+	c_1_0 DD 1.0
+	c_2_0 DD 2.0
+	a_global DD ?
+	c_global DD ?
+	b_global DD ?
+	@aux1 DD ?
 
 .code
 start:
 
-	MOV AL, b_global
-	MOV BL, c_0_us
-	CMP AL, BL
-	JE label1
+	FLD c_1_0
+	FSTP a_global
 
-	MOV AL, c_5_us
-	MOV b_global,AL
+	FLD c_2_0
+	FSTP b_global
 
-	JMP label2
-	label1:
+	FLD c_1_0
+	FLD c_2_0
+	FMUL 
+	FSTSW AX
+	TEST AX, 0000000000000100b
+	JNZ _ProductOverflowError_
+	FSTP @aux1
 
-	MOV AL, c_1_us
-	MOV b_global,AL
+	FLD @aux1
+	FSTP c_global
 
-	label2:
-
-	FUNCTION_act_global PROC
-	MOV AL, c_1_us
-	MOV BL, c_0_us
-	CMP AL, BL
-	JE label3
-
-	MOV AL, c_5_us
-	MOV b_global,AL
-
-	JMP label4
-	label3:
-
-	MOV AL, c_1_us
-	MOV b_global,AL
-
-	label4:
-
-	RET 
-	FUNCTION_act_global ENDP
-
-
+	JMP _end_
+	_SumOverflowError_:
+	invoke StdOut, addr SumOverflowErrorMsg
+	JMP _end_
+	_ProductOverflowError_:
+	invoke StdOut, addr ProductOverflowErrorMsg
+	JMP _end_
+	_RecursionError_:
+	invoke StdOut, addr RecursionErrorMsg
+	JMP _end_
+	_end_:
 END start

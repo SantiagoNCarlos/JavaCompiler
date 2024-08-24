@@ -22,7 +22,7 @@ public class AssemblerCodeManager {
     public void assemblerFileCreation() {
         final String nl = System.lineSeparator();
         // Define code directives
-        final String header = ".586" + nl +
+        final String header = ".386" + nl +
                 ".model flat, stdcall" + nl +
                 "option casemap:none" + nl;
 
@@ -46,10 +46,23 @@ public class AssemblerCodeManager {
 
         final String directives = "\tformatStringLong db \"%d\", 0" + nl +
                                   "\tformatStringUShort db \"%hu\", 0" + nl +
-                                  "\tformatStringFloat db \"%f\", 0" + nl;
+                                  "\tformatStringFloat db \"%f\", 0" + nl +
+                                  "\t_current_function_ DD 0" + nl +
+                                  "\tSumOverflowErrorMsg DB \"Overflow detected in a INTEGER SUM operation\", 10, 0" + nl +
+                                  "\tProductOverflowErrorMsg DB \"Overflow detected in a FLOAT PRODUCT operation\", 10, 0" + nl +
+                                  "\tRecursionErrorMsg DB \"Recursive call detected\", 10, 0" + nl;
 
         // Start keyword
         final String start_keyword = "start:";
+
+        final String jump_to_end_keyword = "\tJMP _end_";
+
+        // Errors handler
+        final String errors_keyword = jump_to_end_keyword + nl +
+                "\t_SumOverflowError_:" + nl + "\tinvoke StdOut, addr SumOverflowErrorMsg" + nl + jump_to_end_keyword + nl +
+                "\t_ProductOverflowError_:" + nl + "\tinvoke StdOut, addr ProductOverflowErrorMsg" + nl + jump_to_end_keyword + nl +
+                "\t_RecursionError_:" + nl + "\tinvoke StdOut, addr RecursionErrorMsg" + nl + jump_to_end_keyword + nl +
+                "\t_end_:";
 
         // End keyword
         final String end_keyword = "END start";
@@ -63,7 +76,7 @@ public class AssemblerCodeManager {
         assemblerWriter.writeSentence(nl + code_keyword);
         assemblerWriter.writeSentence(start_keyword + nl);
         assemblerWriter.writeSentences();
-        assemblerWriter.writeSentence(nl + end_keyword);
+        assemblerWriter.writeSentence(errors_keyword + nl + end_keyword);
         assemblerWriter.close();
     }
 
@@ -98,9 +111,6 @@ public class AssemblerCodeManager {
                 case UsesType.CADENA -> { // Use a 's_' prefix for constants
                     directive = new StringBuilder("s_" + token.replace(" ", "_") + " DB \"" + token + "\", 10, 0"); // New line char (10) and null terminator (0)
                 }
-//                case UsesType.CLASE -> {}
-//                case UsesType.FUNCTION -> {}
-//                case UsesType.CLASS_VAR -> {}
             }
 
             if (!directive.isEmpty()) {

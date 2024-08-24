@@ -771,8 +771,8 @@ public static Map<String, String> classFullNames = new HashMap<>();
 public static Map<String, ArrayList<String>> compositionMap = new HashMap<>();
 public static String currentClass = "";
 
-private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
-    ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(tipoClase));
+private boolean metodoExisteEnClase(String classType, String methodName) {
+    ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(classType));
 
     for (Map.Entry<String, Attribute> entry : SymbolTable.getTableMap().entrySet()) {
         Attribute attribute = entry.getValue();
@@ -781,7 +781,7 @@ private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
           parentClasses = new ArrayList<>();
         }
 
-        parentClasses.add(tipoClase);
+        parentClasses.add(classType);
 
         boolean containsClass = false;
         for (String parentClass : parentClasses) { // Buscamos en clase y en sus padres
@@ -795,7 +795,7 @@ private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
             // Extraer el nombre del método del token
             String metodo = attribute.getToken().split(":")[0];
             // Verificar si el nombre del método coincide con el nombre del método buscado
-            if (metodo.equals(nombreMetodo)) {
+            if (metodo.equals(methodName)) {
                 return true;
             }
         }
@@ -803,22 +803,30 @@ private boolean metodoExisteEnClase(String tipoClase, String nombreMetodo) {
     return false;
 }
 
-private boolean metodoExiste(String tipoClase, String nombreMetodo) {
+private boolean metodoExiste(String classType, String funcName) {
+    // Check for recursion...  put method name last!
+    final int index = funcName.indexOf(':');
+    final String swappedClass = funcName.substring(index + 1) + ":" + funcName.substring(0, index);
+
+    if (swappedClass.equals(classType)) {
+      return true;
+    }
+
     for (Map.Entry<String, Attribute> entry : SymbolTable.getTableMap().entrySet()) {
         Attribute attribute = entry.getValue();
 
-        if (attribute.getUso().equals(UsesType.FUNCTION) && attribute.getToken().contains(tipoClase)) {
+        if (attribute.getUso().equals(UsesType.FUNCTION) && attribute.getToken().contains(classType)) {
             // Extraer el nombre del mÃ©todo del token
             String metodo = attribute.getToken();
-            //System.out.println("comparo: " + metodo + " con " + nombreMetodo + "mi ambito es: " + Parser.ambito);
             // Verificar si el nombre del mÃ©todo coincide con el nombre del mÃ©todo buscado
-            if (metodo.equals(nombreMetodo)) {
+            if (metodo.equals(funcName)) {
                 return true;
             }
         }
     }
     return false;
 }
+
 void addFuncion(SyntaxNode f){
 	if (!arbolFunciones.contains(f))
 		arbolFunciones.add(f);
@@ -1270,7 +1278,7 @@ private Attribute getMemberVarAttribute(SyntaxNode accessNode) {
   }
   return null;
 }
-//#line 1202 "Parser.java"
+//#line 1211 "Parser.java"
 //###############################################################
 // method: yylexdebug : check lexer state
 //###############################################################
@@ -2823,7 +2831,7 @@ case 165:
 //#line 1118 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el contenido de la impresion.");}
 break;
-//#line 2750 "Parser.java"
+//#line 2759 "Parser.java"
 //########## END OF USER-SUPPLIED ACTIONS ##########
     }//switch
     //#### Now let's reduce... ####
