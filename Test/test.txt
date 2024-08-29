@@ -1,9 +1,21 @@
 {
-    FLOAT a;b;c,
-    a = 1.0,
-    b = 2.0,
+    CLASS cc {
+        USHORT b,
+        VOID act(USHORT b) {
+              IF (b == 8_us) {
+                  b = 5_us,
+              } ELSE {
+                  b++,
+                  act(b),
+              }
+              END_IF,
+              RETURN,
+        },
+    }
 
-    c = a * b,
+    cc p,
+
+    p.b = 7_us,
 }
 
 

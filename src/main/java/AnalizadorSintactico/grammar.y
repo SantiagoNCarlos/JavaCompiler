@@ -1353,7 +1353,14 @@ private String getTypeSymbolTableVariablesEnAcceso(String sval, String sval2) {
     final String objectType = getTypeSymbolTableVariables(sval2);
     final String ambitoActual = ":" + Parser.ambito;
 
-    ArrayList<String> composedClassesList = new ArrayList<>(compositionMap.get(classFullNames.get(objectType)));
+    System.out.println(compositionMap);
+
+    ArrayList<String> composedClassesList = compositionMap.get(classFullNames.get(objectType));
+
+    if (composedClassesList == null) {
+      composedClassesList = new ArrayList<>();
+    }
+
     composedClassesList.add(objectType);
 
     for (String composedClass : composedClassesList) {

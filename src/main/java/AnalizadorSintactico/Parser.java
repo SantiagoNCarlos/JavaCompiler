@@ -794,7 +794,7 @@ private boolean metodoExisteEnClase(String classType, String methodName) {
         if (attribute.getUso().equals(UsesType.FUNCTION) && containsClass) {
             // Extraer el nombre del método del token
             String metodo = attribute.getToken().split(":")[0];
-            // Verificar si el nombre del método coincide con el nombre del método buscado
+            // Verificar si el nombre del método encontrado coincide con el nombre del método buscado
             if (metodo.equals(methodName)) {
                 return true;
             }
@@ -816,9 +816,9 @@ private boolean metodoExiste(String classType, String funcName) {
         Attribute attribute = entry.getValue();
 
         if (attribute.getUso().equals(UsesType.FUNCTION) && attribute.getToken().contains(classType)) {
-            // Extraer el nombre del mÃ©todo del token
+            // Extraer el nombre del metodo del token
             String metodo = attribute.getToken();
-            // Verificar si el nombre del mÃ©todo coincide con el nombre del mÃ©todo buscado
+            // Verificar si el nombre del metodo encontrado coincide con el nombre del metodo buscado
             if (metodo.equals(funcName)) {
                 return true;
             }
@@ -994,7 +994,14 @@ private String getTypeSymbolTableVariablesEnAcceso(String sval, String sval2) {
     final String objectType = getTypeSymbolTableVariables(sval2);
     final String ambitoActual = ":" + Parser.ambito;
 
-    ArrayList<String> composedClassesList = new ArrayList<>(compositionMap.get(classFullNames.get(objectType)));
+    System.out.println(compositionMap);
+
+    ArrayList<String> composedClassesList = compositionMap.get(classFullNames.get(objectType));
+
+    if (composedClassesList == null) {
+      composedClassesList = new ArrayList<>();
+    }
+
     composedClassesList.add(objectType);
 
     for (String composedClass : composedClassesList) {
@@ -1214,9 +1221,9 @@ public static void checkFunctionCall(String funcName, String parameterName) {
       if (functionVariable.getKey().startsWith(funcName + ":")) {
         var funcAttr = functionVariable.getValue();
         var paramAttr = funcAttr.getParameter();
-        var paramEntry = SymbolTable.getInstance().getAttribute(parameterName);
 
         if (paramAttr != null) {
+          var paramEntry = SymbolTable.getInstance().getAttribute(parameterName);
           if (paramEntry.isPresent() && !paramAttr.getType().equals( paramEntry.get().getType() )) {
               yyerror("El parametro es del tipo incorrecto.");
           }
@@ -1278,7 +1285,7 @@ private Attribute getMemberVarAttribute(SyntaxNode accessNode) {
   }
   return null;
 }
-//#line 1211 "Parser.java"
+//#line 1217 "Parser.java"
 //###############################################################
 // method: yylexdebug : check lexer state
 //###############################################################
@@ -2831,7 +2838,7 @@ case 165:
 //#line 1118 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el contenido de la impresion.");}
 break;
-//#line 2759 "Parser.java"
+//#line 2765 "Parser.java"
 //########## END OF USER-SUPPLIED ACTIONS ##########
     }//switch
     //#### Now let's reduce... ####

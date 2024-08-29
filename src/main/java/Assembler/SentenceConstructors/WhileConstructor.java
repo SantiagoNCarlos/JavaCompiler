@@ -7,8 +7,6 @@ public class WhileConstructor implements CodeConstructor {
 
     public static String generateStructureCode(SyntaxNode node) {
 
-//        System.out.println("WHILE:\t" + CodeGenerator.codeLabelsCounter + "\t" + CodeGenerator.labelCountStack);
-
         final String labelName = "\tlabel" + CodeGenerator.labelCountStack.pop();
         final String labelName2 = " label" + CodeGenerator.labelCountStack.pop();
 

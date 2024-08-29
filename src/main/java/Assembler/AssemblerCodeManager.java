@@ -48,6 +48,7 @@ public class AssemblerCodeManager {
                                   "\tformatStringUShort db \"%hu\", 0" + nl +
                                   "\tformatStringFloat db \"%f\", 0" + nl +
                                   "\t_current_function_ DD 0" + nl +
+                                  "\t_max_float_value_ DD 3.40282347e+38" + nl +
                                   "\tSumOverflowErrorMsg DB \"Overflow detected in a INTEGER SUM operation\", 10, 0" + nl +
                                   "\tProductOverflowErrorMsg DB \"Overflow detected in a FLOAT PRODUCT operation\", 10, 0" + nl +
                                   "\tRecursionErrorMsg DB \"Recursive call detected\", 10, 0" + nl;

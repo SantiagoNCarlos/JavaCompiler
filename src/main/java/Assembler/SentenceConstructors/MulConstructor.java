@@ -39,9 +39,13 @@ public class MulConstructor implements CodeConstructor {
                 returnCode = "\tFLD " + leftNodeToken.replace(".", "_").replace(":", "_") + "\n" + // Load left node to FPU stack
                         "\tFLD " + rightNodeToken.replace(".", "_").replace(":", "_") + "\n" + // Load right node to FPU stack
                         "\tFMUL \n" + // Multiply...
+                        "\tFLD ST(0)\n" + // Duplicate the result (ST(0) is now also in ST(1))
+                        "\tFABS \n" + // Take the absolute value of the result in ST(0)
+                        "\tFCOM _max_float_value_\n" + // Compare result with max float value (ST remains the same)
                         "\tFSTSW AX\n" + // Store FPU status word in AX
-                        "\tTEST AX, 0000000000000100b\n" + // Test for overflow bit.
-                        "\tJNZ _ProductOverflowError_\n" + // Jump to overflow handler if overflow occurred
+                        "\tSAHF\n" + // Transfer condition codes to CPU flags
+                        "\tJA _ProductOverflowError_\n" + // Jump if result > max_float_reg (overflow)
+                        "\tFXCH\n" + // Exchange ST(0) with ST(1). ST(1) has the original result!
                         "\tFSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
         }
 
