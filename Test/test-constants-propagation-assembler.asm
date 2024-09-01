@@ -24,46 +24,18 @@ printf PROTO C :PTR BYTE, :VARARG
 	ProductOverflowErrorMsg DB "Overflow detected in a FLOAT PRODUCT operation", 10, 0
 	RecursionErrorMsg DB "Recursive call detected", 10, 0
 
-	c_5_us DB 5
-	b_global_clase_obj_global DB ?
-	b_global_clase DB ?
-	@aux1 DB ?
-	c_8_us DB 8
+	a_global DB ?
+	c_1_us DB 1
+	b_global DB ?
 
 .code
 start:
 
-	FUNCTION_func_global_clase PROC
-	MOV AL, b_global_clase
-	MOV BL, c_8_us
-	CMP AL, BL
-	JNE label1
+	MOV AL, c_1_us
+	MOV b_global,AL
 
-	MOV AL, c_5_us
-	MOV b_global_clase,AL
-
-	JMP label2
-	label1:
-
-	MOV AL, b_global_clase
-	ADD AL, 1_us
-	MOV @aux1,AL
-	JC ErrorOverflow
-
-	label2:
-
-	MOV _current_function_, 0
-	RET 
-	FUNCTION_func_global_clase ENDP
-
-	MOV EAX, OFFSET FUNCTION_func_global_clase
-	CMP EAX, _current_function_
-	JE _RecursionError_
-	MOV _current_function_, EAX
-	MOV AL, b_global_clase_obj_global
-	MOV b_global_clase,AL
-
-	CALL FUNCTION_func_global_clase
+	MOV AL, c_1_us
+	MOV a_global,AL
 
 	JMP _end_
 	_SumOverflowError_:

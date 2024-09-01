@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Date;
 import java.text.SimpleDateFormat;
@@ -40,7 +41,12 @@ public class Main {
 
 				MatrixManager.fillMatrices();
 
-				LexicalAnalyzer.reader = new BufferedReader(new FileReader(testPath));
+				try {
+					LexicalAnalyzer.reader = new BufferedReader(new FileReader(testPath));
+				} catch (FileNotFoundException e) {
+					System.out.println("No se encontró el archivo: " + testPath);
+					return;
+				}
 
 				Parser parser = new Parser();
 				LexicalAnalyzer.setParser(parser);

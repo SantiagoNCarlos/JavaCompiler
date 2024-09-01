@@ -15,6 +15,7 @@ public class Attribute {
 	private Attribute parameter = null;
 	private String value = null;
 	private boolean isActive = false;
+	private boolean wasForwardDeclared = false;
     
     public Attribute(String token, int id) {
     	this.token = token;
@@ -155,5 +156,13 @@ public class Attribute {
 		return "Attribute [tokenID= " + tokenID + ", token= " + token + ", type= " + type + ", line= " + line + ", uso= "
 				+ uso + ", esCheck= " + esCheck + ", ambitosUsoIzquierdo= " + ambitosUsoIzquierdo + ", usadaDerecho= "
 				+ usadaDerecho + ", value= " + value + ", isActive= " + isActive + "]";
+	}
+
+	public boolean isWasForwardDeclared() {
+		return wasForwardDeclared;
+	}
+
+	public void setWasForwardDeclared(boolean wasForwardDeclared) {
+		this.wasForwardDeclared = wasForwardDeclared;
 	}
 }

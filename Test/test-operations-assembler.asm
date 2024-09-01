@@ -24,46 +24,59 @@ printf PROTO C :PTR BYTE, :VARARG
 	ProductOverflowErrorMsg DB "Overflow detected in a FLOAT PRODUCT operation", 10, 0
 	RecursionErrorMsg DB "Recursive call detected", 10, 0
 
-	c_5_us DB 5
-	b_global_clase_obj_global DB ?
-	b_global_clase DB ?
-	@aux1 DB ?
-	c_8_us DB 8
+	c_3_l DD 3
+	c_6_l DD 6
+	@aux4 DD ?
+	c_8_l DD 8
+	c_3_77E6 DD 3.77E6
+	c_21_0 DD 21.0
+	a_global DD ?
+	c_global DD ?
+	@aux3 DD ?
+	@aux2 DD ?
+	b_global DD ?
+	d_global DD ?
+	@aux1 DD ?
+	c_2_l DD 2
+	c_-21_0 DD -21.0
 
 .code
 start:
 
-	FUNCTION_func_global_clase PROC
-	MOV AL, b_global_clase
-	MOV BL, c_8_us
-	CMP AL, BL
-	JNE label1
+	MOV EAX, c_3_l
+	MOV a_global,EAX
 
-	MOV AL, c_5_us
-	MOV b_global_clase,AL
+	MOV EAX, c_8_l
+	MOV b_global,EAX
 
-	JMP label2
-	label1:
+	MOV EAX, b_global
+	ADD EAX, 1_l
+	MOV @aux1,EAX
+	JO ErrorOverflow
 
-	MOV AL, b_global_clase
-	ADD AL, 1_us
-	MOV @aux1,AL
-	JC ErrorOverflow
+	MOV EAX, c_3_l
+	SUB EAX, c_8_l
+	MOV @aux2,EAX
+	MOV EAX, @aux2
+	MOV a_global,EAX
 
-	label2:
+	MOV EAX, a_global
+	DIV EAX, c_2_l
+	MOV @aux3,EAX
+	MOV EAX, @aux3
+	MOV a_global,EAX
 
-	MOV _current_function_, 0
-	RET 
-	FUNCTION_func_global_clase ENDP
+	MOV EAX, c_6_l
+	MUL EAX, c_8_l
+	MOV @aux4,EAX
+	MOV EAX, @aux4
+	MOV b_global,EAX
 
-	MOV EAX, OFFSET FUNCTION_func_global_clase
-	CMP EAX, _current_function_
-	JE _RecursionError_
-	MOV _current_function_, EAX
-	MOV AL, b_global_clase_obj_global
-	MOV b_global_clase,AL
+	FLD c_-21_0
+	FSTP c_global
 
-	CALL FUNCTION_func_global_clase
+	FLD c_3_77E6
+	FSTP d_global
 
 	JMP _end_
 	_SumOverflowError_:

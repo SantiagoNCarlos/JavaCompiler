@@ -24,46 +24,51 @@ printf PROTO C :PTR BYTE, :VARARG
 	ProductOverflowErrorMsg DB "Overflow detected in a FLOAT PRODUCT operation", 10, 0
 	RecursionErrorMsg DB "Recursive call detected", 10, 0
 
-	c_5_us DB 5
-	b_global_clase_obj_global DB ?
-	b_global_clase DB ?
-	@aux1 DB ?
-	c_8_us DB 8
+	k_global DD ?
+	s_global DD ?
+	zz_global DD ?
+	c_1_0 DD 1.0
+	c_2147483647_l DD 2147483647
+	a_global DB ?
+	c_0_us DB 0
+	c_--3_40282347E38 DD --3.40282347E38
+	zzz_global DD ?
+	c_1_ DD 1.
+	c_-3_40282347E38 DD -3.40282347E38
+	c_3_e2 DD 3.e2
 
 .code
 start:
 
-	FUNCTION_func_global_clase PROC
-	MOV AL, b_global_clase
-	MOV BL, c_8_us
-	CMP AL, BL
-	JNE label1
+	FLD c_3_e2
+	FSTP s_global
 
-	MOV AL, c_5_us
-	MOV b_global_clase,AL
+	FLD c_1_
+	FSTP s_global
 
-	JMP label2
+	FLD c_1_
+	FLD c_1_0
+	FSTSW aux_mem_2bytes
+	MOV AX, aux_mem_2bytes
+	SAHF
+	JAE label1
+
+	MOV AL, c_0_us
+	MOV a_global,AL
+
 	label1:
 
-	MOV AL, b_global_clase
-	ADD AL, 1_us
-	MOV @aux1,AL
-	JC ErrorOverflow
+	MOV AL, c_0_us
+	MOV a_global,AL
 
-	label2:
+	MOV EAX, c_2147483647_l
+	MOV k_global,EAX
 
-	MOV _current_function_, 0
-	RET 
-	FUNCTION_func_global_clase ENDP
+	FLD c_--3_40282347E38
+	FSTP s_global
 
-	MOV EAX, OFFSET FUNCTION_func_global_clase
-	CMP EAX, _current_function_
-	JE _RecursionError_
-	MOV _current_function_, EAX
-	MOV AL, b_global_clase_obj_global
-	MOV b_global_clase,AL
-
-	CALL FUNCTION_func_global_clase
+	FLD c_1_
+	FSTP s_global
 
 	JMP _end_
 	_SumOverflowError_:

@@ -9,7 +9,7 @@
         sub = c - d,
         d = d + sub,
         RETURN,
-    }
+    },
 
     VOID divide() {
         CHECK USHORT x;y,
@@ -17,13 +17,14 @@
         y = 3_us,
         CHECK FLOAT division,
         division = x / y,
-        WHILE ( x < 6) DO {
+        WHILE ( x < 6_us) DO {
 	    	FLOAT bb,
 	    	bb = 7.77777,
 	    	y = 99_l,
-	    }
-    }
-    d = d + 3,
+	    },
+	    RETURN,
+    },
+
     subtract(sub),
     divide(),
 	sub = 6_l - 3_l,

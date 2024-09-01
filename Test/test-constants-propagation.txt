@@ -1,0 +1,7 @@
+{
+    USHORT a;b,
+
+    b = 1_us,
+    a = b,
+
+}

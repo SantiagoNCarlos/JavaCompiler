@@ -110,7 +110,7 @@ public class AssemblerCodeManager {
                     }
                 }
                 case UsesType.CADENA -> { // Use a 's_' prefix for constants
-                    directive = new StringBuilder("s_" + token.replace(" ", "_") + " DB \"" + token + "\", 10, 0"); // New line char (10) and null terminator (0)
+                    directive = new StringBuilder("s_" + token.replace("#","").replace(" ", "_") + " DB \"" + token.replace("#","") + "\", 10, 0"); // New line char (10) and null terminator (0)
                 }
             }
 

@@ -1,5 +1,6 @@
 %{
 package AnalizadorSintactico;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -178,13 +179,15 @@ asignacion:
 
                                     entry.addAmbito(ambito);
 
-                                    Optional<Attribute> childNodeValue = rightSyntaxNode.getNodeValue();
-                                    if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { // If its a leaf node, then the value its a constant
-                                        entry.setActive(true);
-                                        entry.setValue(rightSyntaxNode.getName());
-                                    } else {
-                                        entry.setActive(false);
-                                        entry.setValue(null);
+                                    if (rightSyntaxNode != null) {
+                                      Optional<Attribute> childNodeValue = rightSyntaxNode.getNodeValue();
+                                      if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { /* If its a leaf node, then the value its a constant*/
+                                          entry.setActive(true);
+                                          entry.setValue(rightSyntaxNode.getName());
+                                      } else {
+                                          entry.setActive(false);
+                                          entry.setValue(null);
+                                      }
                                     }
                                 }
                             }
@@ -212,13 +215,16 @@ asignacion:
 
                         Attribute memberAttr = getMemberVarAttribute(accessNode);
 
-                        Optional<Attribute> childNodeValue = rightSyntaxNode.getNodeValue();
-                        if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { // If its a leaf node, then the value its a constant
-                          memberAttr.setActive(true);
-                          memberAttr.setValue(rightSyntaxNode.getName());
-                        } else {
-                          memberAttr.setActive(false);
-                          memberAttr.setValue(null);
+                        if (memberAttr != null && rightSyntaxNode != null) {
+                            Optional<Attribute> childNodeValue = rightSyntaxNode.getNodeValue();
+
+                            if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { // If its a leaf node, then the value its a constant
+                              memberAttr.setActive(true);
+                              memberAttr.setValue(rightSyntaxNode.getName());
+                            } else {
+                              memberAttr.setActive(false);
+                              memberAttr.setValue(null);
+                            }
                         }
                     }
             }
@@ -868,26 +874,61 @@ definicion_class:
             ;
 
 forward_declaration:	
-            CLASS ID ',' { logger.logDebugSyntax("FORWARD DECLARATION en la linea " + LexicalAnalyzer.getLine()); }
+            CLASS ID ',' {
+                logger.logDebugSyntax("FORWARD DECLARATION en la linea " + LexicalAnalyzer.getLine());
+                String nombreClase = $2.sval + ":" + Parser.ambito;
+
+                /* Registrar la clase en la tabla de simbolos*/
+                SymbolTable tablaSimbolos = SymbolTable.getInstance();
+
+                Optional<Attribute> classAttr = tablaSimbolos.getAttribute(nombreClase);
+
+                if (classAttr.isPresent()) {
+                    yyerror("La clase " + nombreClase + " ya fue declarada.");
+                } else {
+                    Attribute newAttr = new Attribute(Parser.ID, nombreClase, "Clase", UsesType.CLASE, LexicalAnalyzer.getLine());
+                    newAttr.setWasForwardDeclared(true);
+                    tablaSimbolos.insertAttribute(newAttr);
+
+                    parseAndAddToClassMap(newAttr.getToken());
+
+                    currentClass = nombreClase;
+
+                    $$.sval = nombreClase;
+                }
+            }
 
 header_class:
 		    CLASS ID {
 		        logger.logDebugSyntax("CLASE en la linea " + LexicalAnalyzer.getLine());
 		        String nombreClase = $2.sval + ":" + Parser.ambito;
 		
-		        /* Registrar la clase en la tabla de sÃ­mbolos*/
+		        /* Registrar la clase en la tabla de simbolos*/
 		        SymbolTable tablaSimbolos = SymbolTable.getInstance();
 
-		        Attribute newAttr = new Attribute(Parser.ID, nombreClase, "Clase", UsesType.CLASE, LexicalAnalyzer.getLine());
-		        tablaSimbolos.insertAttribute(newAttr);
+                Optional<Attribute> classAttr = tablaSimbolos.getAttribute(nombreClase);
 
-		        parseAndAddToClassMap(newAttr.getToken());
+                if (classAttr.isPresent()) {
+                  if (classAttr.get().isWasForwardDeclared()) {
+                    currentClass = nombreClase;
+                    nuevoAmbito($2.sval); /* Agrega el nuevo ambito de la clase*/
+                    $$.sval = nombreClase;
+                    classAttr.get().setWasForwardDeclared(false);
+                  } else {
+                    yyerror("La clase " + nombreClase + " ya fue declarada previamente.");
+                  }
+                } else {
+                  Attribute newAttr = new Attribute(Parser.ID, nombreClase, "Clase", UsesType.CLASE, LexicalAnalyzer.getLine());
+                  tablaSimbolos.insertAttribute(newAttr);
 
-		        currentClass = nombreClase;
-		
-		        nuevoAmbito($2.sval); /* Agrega el nuevo Ã¡mbito de la clase*/
+                  parseAndAddToClassMap(newAttr.getToken());
 
-                $$.sval = nombreClase;
+                  currentClass = nombreClase;
+
+                  nuevoAmbito($2.sval); /* Agrega el nuevo ambito de la clase*/
+
+                  $$.sval = nombreClase;
+                }
 		    }
             | CLASS error{logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el ID");}
             ;
@@ -930,20 +971,32 @@ bloque_class:
 
 inheritance_by_composition:
             ID {
-                if (!esTipoClaseValido($1.sval)) {
-                    yyerror("Tipo de clase no declarado: " + $1.sval);
-                } else {
-                  logger.logDebugSyntax("Herencia por composicion en la linea " + LexicalAnalyzer.getLine());
+              if (!esTipoClaseValido($1.sval)) {
+                yyerror("Tipo de clase no declarado: " + $1.sval);
+              } else {
+                logger.logDebugSyntax("Herencia por composicion en la linea " + LexicalAnalyzer.getLine());
+                ArrayList<String> inheritanceClasses = compositionMap.get(currentClass);
+                final String classFullName = getNameSymbolTableVariables($1.sval);
 
-                  ArrayList<String> inheritanceClasses = compositionMap.get(currentClass);
-                  final String classFullName = getNameSymbolTableVariables($1.sval);
-                  if (inheritanceClasses == null) {
-                    inheritanceClasses = new ArrayList<>();
-                    compositionMap.put(currentClass, inheritanceClasses);
-                  }
-
-                  inheritanceClasses.add(classFullName);
+                if (inheritanceClasses == null) {
+                  inheritanceClasses = new ArrayList<>();
+                  compositionMap.put(currentClass, inheritanceClasses);
                 }
+
+                // Verificar la profundidad de la herencia antes de añadir la nueva clase
+                int inheritanceDepth = getInheritanceDepth(classFullName, 1);
+                if (inheritanceDepth >= 3) {
+                  yyerror("Error: Se excede el límite de niveles de herencia (máximo 3) al heredar de " + val_peek(0).sval);
+                } else {
+                  inheritanceClasses.add(classFullName);
+
+                  // Verificar si al añadir esta clase se excede el límite para la clase actual
+                  if (getInheritanceDepth(currentClass, 0) >= 3) {
+                    yyerror("Error: Se excede el límite de niveles de herencia (máximo 3) para la clase " + currentClass);
+                    inheritanceClasses.remove(classFullName); // Revertir la adición
+                  }
+                }
+              }
             }
             ;
 
@@ -1026,7 +1079,7 @@ llamada:
 				                logger.logDebugSyntax("Llamado a método en la linea " + LexicalAnalyzer.getLine());
                         		$$ = new ParserVal(llamadaSyntaxNode);
 
-				            	checkFunctionCall(nombreMetodo);
+				            	checkFunctionCall(nombreMetodo, null);
 				            } else {
 				                yyerror("Error en la línea " + LexicalAnalyzer.getLine() + ": El método " + $1.sval + " no existe " );
 				            }
@@ -1072,7 +1125,7 @@ llamada:
 				                logger.logDebugSyntax("Llamado a método de clase en la linea " + LexicalAnalyzer.getLine());
 				                $$ = new ParserVal(llamadaSyntaxNode);
 
-				                checkFunctionCall(nombreMetodo);
+				                checkFunctionCall(nombreMetodo, null);
 				            } else {
 				                yyerror("Error en la línea " + LexicalAnalyzer.getLine() + ": El método " + nombreMetodo + " no existe en la clase " + tipoClase);
 				            }
@@ -1150,7 +1203,7 @@ private boolean metodoExisteEnClase(String classType, String methodName) {
             }
         }
 
-        if (attribute.getUso().equals(UsesType.FUNCTION) && containsClass) {
+        if (attribute.getUso() != null && attribute.getUso().equals(UsesType.FUNCTION) && containsClass) {
             // Extraer el nombre del método del token
             String metodo = attribute.getToken().split(":")[0];
             // Verificar si el nombre del método encontrado coincide con el nombre del método buscado
@@ -1174,7 +1227,7 @@ private boolean metodoExiste(String classType, String funcName) {
     for (Map.Entry<String, Attribute> entry : SymbolTable.getTableMap().entrySet()) {
         Attribute attribute = entry.getValue();
 
-        if (attribute.getUso().equals(UsesType.FUNCTION) && attribute.getToken().contains(classType)) {
+        if (attribute.getUso() != null && attribute.getUso().equals(UsesType.FUNCTION) && attribute.getToken().contains(classType)) {
             // Extraer el nombre del metodo del token
             String metodo = attribute.getToken();
             // Verificar si el nombre del metodo encontrado coincide con el nombre del metodo buscado
@@ -1184,11 +1237,6 @@ private boolean metodoExiste(String classType, String funcName) {
         }
     }
     return false;
-}
-
-void addFuncion(SyntaxNode f){
-	if (!arbolFunciones.contains(f))
-		arbolFunciones.add(f);
 }
 
 public static List<SyntaxNode> getArbolFunciones() {
@@ -1352,8 +1400,6 @@ private String getTypeSymbolTableVariables(String sval) {
 private String getTypeSymbolTableVariablesEnAcceso(String sval, String sval2) {
     final String objectType = getTypeSymbolTableVariables(sval2);
     final String ambitoActual = ":" + Parser.ambito;
-
-    System.out.println(compositionMap);
 
     ArrayList<String> composedClassesList = compositionMap.get(classFullNames.get(objectType));
 
@@ -1563,34 +1609,42 @@ public static int yylex() {
     return tokenID;
 }
 
-public static void checkFunctionCall(String funcName) {
-
-    var funcAttr = SymbolTable.getInstance().getAttribute(funcName);
-
-    if (funcAttr.isPresent()) {
-      var paramAttr = funcAttr.get().getParameter();
-
-      if (paramAttr != null)
-        yyerror("Faltan parametros para llamar a esta funcion.");
-    }
-}
-
 public static void checkFunctionCall(String funcName, String parameterName) {
-    for (Map.Entry<String, Attribute> functionVariable : SymbolTable.getTableMap().entrySet()) {
-      if (functionVariable.getKey().startsWith(funcName + ":")) {
-        var funcAttr = functionVariable.getValue();
-        var paramAttr = funcAttr.getParameter();
+  boolean functionFound = false;
+  boolean hasParameter = parameterName != null && !parameterName.isEmpty();
 
-        if (paramAttr != null) {
-          var paramEntry = SymbolTable.getInstance().getAttribute(parameterName);
-          if (paramEntry.isPresent() && !paramAttr.getType().equals( paramEntry.get().getType() )) {
-              yyerror("El parametro es del tipo incorrecto.");
-          }
-        } else {
-            yyerror("Esta funcion no admite el pasaje de parametros.");
+  for (Map.Entry<String, Attribute> functionVariable : SymbolTable.getTableMap().entrySet()) {
+    if ((functionVariable.getKey().startsWith(funcName + ":") || functionVariable.getKey().contains(funcName)) && functionVariable.getValue().getUso().equals(UsesType.FUNCTION)) {
+      functionFound = true;
+      var funcAttr = functionVariable.getValue();
+      var paramAttr = funcAttr.getParameter();
+
+      if (paramAttr == null && hasParameter) {
+        yyerror("Esta funcion no admite el pasaje de parametros.");
+        return;
+      }
+
+      if (paramAttr != null && !hasParameter) {
+        yyerror("Faltan parametros para llamar a esta funcion.");
+        return;
+      }
+
+      if (hasParameter) {
+        var paramEntry = SymbolTable.getInstance().getAttribute(parameterName);
+        if (paramEntry.isPresent() && !paramAttr.getType().equals(paramEntry.get().getType())) {
+          yyerror("El parametro es del tipo incorrecto.");
+          return;
         }
       }
+
+      // Si llegamos aquí, la llamada a la función es correcta
+      return;
     }
+  }
+
+  if (!functionFound) {
+    yyerror("La funcion '" + funcName + "' no esta definida.");
+  }
 }
 
 private void parseAndAddToClassMap(String input) {
@@ -1643,4 +1697,23 @@ private Attribute getMemberVarAttribute(SyntaxNode accessNode) {
     }
   }
   return null;
+}
+
+private int getInheritanceDepth(String className, int currentDepth) {
+  if (currentDepth > 3) {
+    return currentDepth;
+  }
+
+  ArrayList<String> parentClasses = compositionMap.get(className);
+  if (parentClasses == null || parentClasses.isEmpty()) {
+    return currentDepth;
+  }
+
+  int maxDepth = currentDepth;
+  for (String parentClass : parentClasses) {
+    int depth = getInheritanceDepth(parentClass, currentDepth + 1);
+    maxDepth = Math.max(maxDepth, depth);
+  }
+
+  return maxDepth;
 }

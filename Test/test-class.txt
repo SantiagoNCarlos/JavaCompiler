@@ -1,6 +1,6 @@
 {
 	*{ Test para comprobar la creacion de clases. }*
-	CLASS clase2,
+	CLASS clase2, *{ Caso de forward declaration }*
 
     PRINT # AAA123 142 #,
 
@@ -15,13 +15,14 @@
             RETURN,
         },
 	}
+
 	CHECK LONG k,
-	k = clase2.pp,
+	clase2 var,
+	k = var.pp,
 	cc = cc + 1.0,
 
 	FLOAT uu,
 	uu = cc * 9.8,
-	 *{uu++,}*
 	
 	CLASS testclase {
 		CHECK LONG l1;l2,

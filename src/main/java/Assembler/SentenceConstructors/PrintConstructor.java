@@ -10,7 +10,7 @@ public class PrintConstructor implements CodeConstructor {
     public static String generateStructureCode(SyntaxNode node) {
 		SyntaxNode leftChild = node.getLeftChild();
 
-		final String leftNodeToken = CodeConstructor.getToken(leftChild);
+		final String leftNodeToken = CodeConstructor.getToken(leftChild).replace("#","");
         final String type = leftChild.getType();
 
         node.setLeftChild(null);
@@ -21,12 +21,12 @@ public class PrintConstructor implements CodeConstructor {
 	}
 
     private static String generatePrintCode(String token, String type) {
-        System.out.println(token + " " + type);
+        System.out.println("[ " + token + " ]" + " " + type);
         return switch (type) {
             case UsesType.LONG -> "\tinvoke printf, offset formatStringLong, " + token.replace(":", "_") + "\n";
             case UsesType.USHORT -> "\tinvoke printf, offset formatStringUShort, " + token.replace(":", "_") + "\n";
             case UsesType.FLOAT -> "\tinvoke printf, offset formatStringFloat, " + token.replace(":", "_") + "\n";
-            case UsesType.CADENA -> "\tinvoke printf, addr " + token + "\n"; // Asumiendo que 'token' es una cadena de caracteres
+            case UsesType.CADENA -> "\tinvoke printf, addr " + "s_" + token.replace(" ", "_") + "\n"; // Asumiendo que 'token' es una cadena de caracteres
             default -> "";
         };
     }

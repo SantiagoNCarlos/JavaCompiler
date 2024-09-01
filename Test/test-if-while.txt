@@ -28,23 +28,22 @@
     	FLOAT bb,
     	bb = 7.77777,
     	h = 99_l,
-    }
+    },
 
     h=7.74,  
     l=7_l,
 	l = 1_l * 3_l,
-	l = l++ + h++,
 
-	IF ( l < 6 ) {
-	    IF (l > 2) {
-	        l=3,
+	IF ( l < 6_l ) {
+	    IF (l > 2_l) {
+	        l=3_us,
 	        WHILE ( h > 0.1e3 ) DO {
-	            h = h + 1,
-	        }
+	            h = h + 1_us,
+	        },
 	    }
 	    ELSE {
 	        IF (h !! 0.3)
-	            RETURN,
+	            h++,
 	        END_IF,
 	    }
 	    END_IF,

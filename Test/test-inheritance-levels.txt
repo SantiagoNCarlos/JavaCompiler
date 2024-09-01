@@ -1,0 +1,20 @@
+{
+    CLASS cx {
+        USHORT a,
+    }
+
+    CLASS cc {
+        cx,
+        USHORT b,
+    }
+
+    CLASS cb {
+        USHORT c,
+        cc,
+    }
+
+    CLASS ca {
+        USHORT d,
+        cb,
+    }
+}

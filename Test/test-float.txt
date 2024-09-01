@@ -1,8 +1,0 @@
-{
-    LONG aaaaabbbbbcccccdddddeeeee;aaaaabbbbbcccccdddddeeeef,
-    FLOAT a;b,
-    WHILE ( a < b ) DO {
-        a = 3.,
-    },
-    aaaaabbbbbcccccdddddeeeef = 2_l,
-}
