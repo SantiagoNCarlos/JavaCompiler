@@ -31,10 +31,12 @@ public class AssemblerCodeManager {
                 "include \\masm32\\include\\windows.inc" + nl +
                 "include \\masm32\\include\\kernel32.inc" + nl +
                 "include \\masm32\\include\\masm32.inc" + nl +
+                "include \\masm32\\include\\user32.inc" + nl +
                 nl +
                 "includelib \\masm32\\lib\\kernel32.lib" + nl +
                 "includelib \\masm32\\lib\\masm32.lib" + nl +
                 "includelib \\masm32\\lib\\msvcrt.lib" + nl +
+                "includelib \\masm32\\lib\\user32.lib" + nl +
 
                 "printf PROTO C :PTR BYTE, :VARARG"  ;
 

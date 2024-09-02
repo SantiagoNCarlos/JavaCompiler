@@ -3,15 +3,36 @@
         USHORT b,
         VOID func() {
           IF (b == 8_us) {
-              b = 5_us,
+              PRINT # LLEGUE #,
           } ELSE {
+              PRINT # NO LLEGUE PTM #,
               b++,
+              b = b + 1_us,
           }
           END_IF,
+
           RETURN,
         },
     }
 
+
+
     clase obj,
+    obj.b = 6_us,
+    PRINT obj.b,
     obj.func(),
+
+    obj.b = obj.b + 1_us,
+    PRINT obj.b,
+    obj.func(),
+
+    obj.b = obj.b + 1_us,
+    PRINT obj.b,
+    obj.func(),
+
+
+    *{WHILE (obj.b <= 8_us) DO {
+
+    }, }*
+
 }

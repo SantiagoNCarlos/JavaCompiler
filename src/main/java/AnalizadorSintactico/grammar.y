@@ -262,10 +262,12 @@ incremento:
 			            SyntaxNode incrementValueNode = new SyntaxNode(incrementValue, UsesType.CONSTANT); /* Nodo para el valor de incremento*/
 			            SyntaxNode incrementNode = new SyntaxNode("++", variableNode, incrementValueNode, symbolType);
 
-                        $$ = new ParserVal(incrementNode);
+                        SyntaxNode asign = new SyntaxNode("=", variableNode, incrementNode, symbolType);
+
+                        $$ = new ParserVal(asign);
 
                         var t = SymbolTable.getInstance();
-                        t.insertAttribute(new Attribute (CTE, incrementValue, symbolType, symbolType, LexicalAnalyzer.getLine()));
+                        t.insertAttribute(new Attribute (CTE, incrementValue, symbolType, UsesType.CONSTANT, LexicalAnalyzer.getLine()));
                         
                         var entrada = t.getAttribute(nombreCompleto);
 

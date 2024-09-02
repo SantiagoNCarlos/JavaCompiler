@@ -32,13 +32,17 @@ public class SyntaxTreeDecoder {
                         final String funcName = parts.length > 1 ? parts[1] : "";
                         CodeGenerator.functionsLabelsStack.push("FUNCTION_" + funcName.replace(':', '_'));
 
-                        assemblerWriter.addSentence("\t" + CodeGenerator.functionsLabelsStack.peek() + " PROC");
+                        assemblerWriter.addSentence(CodeGenerator.functionsLabelsStack.peek() + " PROC");
                     }
                 }
 
                 processNode(fatherNode.getLeftChild());
                 processNode(fatherNode.getRightChild());
                 generateAndPrintCode(fatherNode);
+
+                if (parts[0].equalsIgnoreCase("root")) {
+                    assemblerWriter.addSentence("\tJMP _end_\n");
+                }
             }
         }
     }
