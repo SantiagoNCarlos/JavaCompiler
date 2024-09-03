@@ -34,8 +34,8 @@ public class AssignConstructor implements CodeConstructor{
 					"\tMOV EAX, " + rightNodeToken + "\n" +
 					"\tMOV " + leftNodeToken + ",EAX\n";
 			case UsesType.FLOAT -> // 32 bits FP
-					"\tFLD " + rightNodeToken.replace(".", "_") + "\n" +
-					"\tFSTP " + leftNodeToken.replace(".", "_") + "\n";
+					"\tFLD " + rightNodeToken.replace(".", "_").replace("+","_") + "\n" +
+					"\tFSTP " + leftNodeToken.replace(".", "_").replace("+","_") + "\n";
 			default -> "";
 		};
 	}

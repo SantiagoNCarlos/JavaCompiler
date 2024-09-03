@@ -47,8 +47,8 @@ public class ConditionConstructor implements CodeConstructor {
                             "\t" + assembler_command + labelName + "\n"; // Use sentence to determine if jump is needed
             }
             case UsesType.FLOAT -> {
-                returnCode = "\tFLD " + leftNodeToken.replace(".", "_").replace(":", "_") + "\n" + // Load left node to FPU stack
-                            "\tFLD " + rightNodeToken.replace(".", "_").replace(":", "_") + "\n" + // Load right node to FPU stack
+                returnCode = "\tFLD " + leftNodeToken.replace(".", "_").replace(":", "_").replace("+","_") + "\n" + // Load left node to FPU stack
+                            "\tFLD " + rightNodeToken.replace(".", "_").replace(":", "_").replace("+","_") + "\n" + // Load right node to FPU stack
                             "\tFSTSW aux_mem_2bytes\n" + // Compare...
                             "\tMOV AX, aux_mem_2bytes\n" +
                             "\tSAHF\n" + // Set the state bits in flags to enable comparison next

@@ -5,6 +5,8 @@ import AnalizadorLexico.Enums.UsesType;
 import AnalizadorLexico.SymbolTable;
 import AnalizadorSintactico.Parser;
 import ArbolSintactico.SyntaxNode;
+import org.apache.commons.lang3.tuple.Pair;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,6 +25,7 @@ public class MethodCallerConstructor implements CodeConstructor {
 
         String returnCode = "";
         String funcName = "";
+        String restoreMemberState = ""; // We need to update the values of the object members used in a method! (Parameters are passed by value).
 
         SyntaxNode parameterNode = rightChild.getLeftChild();
 
@@ -32,7 +35,9 @@ public class MethodCallerConstructor implements CodeConstructor {
 
                 returnCode += "\tMOV EAX, OFFSET FUNCTION_" + funcName.replace(":", "_") + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
 
-                returnCode += loadCorrectMembers(node.getLeftChild(), node.getRightChild());
+                Pair<String, String> membersPair = loadCorrectMembers(node.getLeftChild(), node.getRightChild());
+                returnCode += membersPair.getLeft();
+                restoreMemberState = membersPair.getRight();
 
                 final String parameterType = parameterNode.getLeftChild().getType();
                 final String parameterName = getParameterName(parameterNode.getLeftChild());
@@ -66,10 +71,14 @@ public class MethodCallerConstructor implements CodeConstructor {
         } else { // Function does not receive any parameters!
             funcName = getFullFuncName(rightChild.getName(), leftChild);
             returnCode = "\tMOV EAX, OFFSET FUNCTION_" + funcName.replace(":", "_") + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
-            returnCode += loadCorrectMembers(node.getLeftChild(), node.getRightChild());
+            Pair<String, String> membersPair = loadCorrectMembers(node.getLeftChild(), node.getRightChild());
+            returnCode += "\n" + membersPair.getLeft();
+            restoreMemberState = membersPair.getRight();
         }
 
         returnCode += "\n\tCALL FUNCTION_" + funcName.replace(":", "_") + "\n";
+
+        returnCode += "\n" + restoreMemberState;
 
         return returnCode;
     }
@@ -129,29 +138,41 @@ public class MethodCallerConstructor implements CodeConstructor {
 
 
 
-    private static String loadCorrectMembers(SyntaxNode objectNode, SyntaxNode funcNode) {
+    private static Pair<String, String> loadCorrectMembers(SyntaxNode objectNode, SyntaxNode funcNode) {
         // Loads to the function used variables the values from the caller object
         Optional<Attribute> objectAttr = SymbolTable.getInstance().getAttribute(objectNode.getName());
         StringBuilder returnCode = new StringBuilder();
+        StringBuilder restoreMembersCode = new StringBuilder();
 
         if (objectAttr.isPresent()) {
             HashMap<String, String> variablesUsed = getUsedVariables(objectAttr.get().getType(), funcNode.getName());
             for (Map.Entry<String, String> functionVariable : variablesUsed.entrySet()) {
                 final String objectMember = functionVariable.getKey() + "_" + objectAttr.get().getToken().replace(":", "_");
                 switch (functionVariable.getValue()) {
-                    case UsesType.USHORT ->
+                    case UsesType.USHORT -> {
                         returnCode.append("\tMOV AL, ").append(objectMember).append("\n").append( // Load the 8-bit value into AL
                                 "\tMOV ").append(functionVariable.getKey()).append(",AL\n");//  // Zero-extend AX to EAX (32-bit register) to maintain alignment
-                    case UsesType.LONG ->
+                        // Update values of the affected members!
+                        restoreMembersCode.append("\tMOV AL, ").append(functionVariable.getKey()).append("\n").append(
+                                "\tMOV ").append(objectMember).append(",AL\n");
+                        }
+                    case UsesType.LONG -> {
                         returnCode.append("\tMOV EAX, ").append(objectMember).append("\n").append("\tMOV ").append(functionVariable.getKey()).append(",EAX"); // Store the 32 bit LONG mul in aux variable.
-                    case UsesType.FLOAT ->
+                        // Update values of the affected members!
+                        restoreMembersCode.append("\tMOV EAX, ").append(functionVariable.getKey()).append("\n").append("\tMOV ").append(objectMember).append(",EAX\n");
+                        }
+                    case UsesType.FLOAT -> {
                         returnCode.append("\tFLD ").append(objectMember).append("\n").append( // Load left node to FPU stack
                                 "\tFSTP ").append(functionVariable.getKey()).append("\n"); // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
+                        // Update values of the affected members!
+                        restoreMembersCode.append("\tFLD ").append(functionVariable.getKey()).append("\n").append( // Load right node to FPU stack
+                                "\tFSTP ").append(objectMember).append("\n"); // Store the 32 bit FP mul in auxiliar variable. Also pop the stack                    }
+                    }
                 }
             }
         }
 
-        return returnCode.toString();
+        return Pair.of(returnCode.toString(), restoreMembersCode.toString());
     }
 
 
@@ -197,7 +218,7 @@ public class MethodCallerConstructor implements CodeConstructor {
             if (token.contains(className)
                     && entry.getUso().equals(UsesType.VARIABLE)
                     && scopes != null
-                    && scopes.contains(methodName))
+                    && (scopes.contains(methodName) || entry.isUsadaDerecho()))
             {
                 members.put(token.replace(":", "_"), entry.getType());
             }

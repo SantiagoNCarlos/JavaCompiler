@@ -42,8 +42,8 @@ public class AddConstructor implements CodeConstructor{
                             "\tMOV " + auxVariableName + ",EAX" + "\n" + // Store the 32 bit LONG mul in aux variable.
                             "\tJO _SumOverflowError_\n"; // Gets triggered when an overflow with signed numbers occurs...
             case UsesType.FLOAT ->
-                returnCode = "\tFLD " + leftNodeToken.replace(".", "_") + "\n" + // Load left node to FPU stack
-                        "\tFLD " + rightNodeToken.replace(".", "_") + "\n" + // Load right node to FPU stack
+                returnCode = "\tFLD " + leftNodeToken.replace(".", "_").replace("+","_") + "\n" + // Load left node to FPU stack
+                        "\tFLD " + rightNodeToken.replace(".", "_").replace("+","_") + "\n" + // Load right node to FPU stack
                         "\tFADD\n" + // Add...
                         "\tFSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
         }

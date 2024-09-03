@@ -22,22 +22,25 @@ public class AssemblerCodeManager {
     public void assemblerFileCreation() {
         final String nl = System.lineSeparator();
         // Define code directives
-        final String header = ".386" + nl +
-                ".model flat, stdcall" + nl +
-                "option casemap:none" + nl;
+        final String header = ";.386" + nl +
+                ";.model flat, stdcall" + nl +
+                ";option casemap:none" + nl + nl;
 
         // Define code includes
-        final String includes = nl +
-                "include \\masm32\\include\\windows.inc" + nl +
-                "include \\masm32\\include\\kernel32.inc" + nl +
-                "include \\masm32\\include\\masm32.inc" + nl +
-                "include \\masm32\\include\\user32.inc" + nl +
+        final String includes =
+                "include \\masm32\\include\\masm32rt.inc" + nl + // using this include we comment every other include and the headers!
+//                "include \\masm32\\include\\windows.inc" + nl +
+//                "include \\masm32\\include\\kernel32.inc" + nl +
+//                "include \\masm32\\include\\masm32.inc" + nl +
+//                "include \\masm32\\include\\user32.inc" + nl +
                 nl +
                 "includelib \\masm32\\lib\\kernel32.lib" + nl +
                 "includelib \\masm32\\lib\\masm32.lib" + nl +
                 "includelib \\masm32\\lib\\msvcrt.lib" + nl +
                 "includelib \\masm32\\lib\\user32.lib" + nl +
-
+                //"includelib \\masm32\\lib\\masm32rt.lib" + nl +
+                nl +
+                "dll_dllcrt0 PROTO C" + nl +
                 "printf PROTO C :PTR BYTE, :VARARG"  ;
 
         final String stack_keyboard = ".stack 200h";
@@ -46,9 +49,9 @@ public class AssemblerCodeManager {
         // Define .code keyword
         final String code_keyword = ".code";
 
-        final String directives = "\tformatStringLong db \"%d\", 0" + nl +
-                                  "\tformatStringUShort db \"%hu\", 0" + nl +
-                                  "\tformatStringFloat db \"%f\", 0" + nl +
+        final String directives = //"\tformatStringLong db \"%d\", 0" + nl +
+                                  //"\tformatStringUShort db \"%hu\", 0" + nl +
+                                  //"\tformatStringFloat db \"%f\", 0" + nl +
                                   "\t_current_function_ DD 0" + nl +
                                   "\t_max_float_value_ DD 3.40282347e+38" + nl +
                                   "\tSumOverflowErrorMsg DB \"Overflow detected in a INTEGER SUM operation\", 10, 0" + nl +
@@ -67,6 +70,8 @@ public class AssemblerCodeManager {
                 "\t_RecursionError_:" + nl + "\tinvoke StdOut, addr RecursionErrorMsg" + nl + jump_to_end_keyword + nl +
                 "\t_end_:";
 
+        final String exit_process_keyword = "\tinvoke ExitProcess, 0";
+
         // End keyword
         final String end_keyword = "END start";
 
@@ -79,7 +84,7 @@ public class AssemblerCodeManager {
         assemblerWriter.writeSentence(nl + code_keyword);
         assemblerWriter.writeSentence(start_keyword + nl);
         assemblerWriter.writeSentences();
-        assemblerWriter.writeSentence(errors_keyword + nl + end_keyword);
+        assemblerWriter.writeSentence(errors_keyword + nl + exit_process_keyword + nl + end_keyword);
         assemblerWriter.close();
     }
 
@@ -102,7 +107,7 @@ public class AssemblerCodeManager {
                 }
                 case UsesType.CONSTANT -> { // Use a 'c_' prefix for constants
                     if (type.equals(UsesType.FLOAT)) {
-                        directive = new StringBuilder("c_" + token.replace(".", "_") + " DD " + token);
+                        directive = new StringBuilder("c_" + token.replace(".", "_").replace("+","_") + " DD " + token);
                     } else {
                         final String constant_value = token.contains("_") ? token.substring(0, token.indexOf("_")) : "";
 

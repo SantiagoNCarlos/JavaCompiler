@@ -1,13 +1,20 @@
 {
+    FLOAT x,
+    x = 2.40282347e+38,
+
+    x = x * 1.0,
+    PRINT x,
+}
+
+*{
+
     CLASS clase {
         USHORT b,
         VOID func() {
           IF (b == 8_us) {
               PRINT # LLEGUE #,
           } ELSE {
-              PRINT # NO LLEGUE PTM #,
-              b++,
-              b = b + 1_us,
+              PRINT # NO LLEGUE #,
           }
           END_IF,
 
@@ -15,24 +22,14 @@
         },
     }
 
-
-
     clase obj,
-    obj.b = 6_us,
-    PRINT obj.b,
-    obj.func(),
+    obj.b = 2_us,
 
-    obj.b = obj.b + 1_us,
-    PRINT obj.b,
-    obj.func(),
-
-    obj.b = obj.b + 1_us,
-    PRINT obj.b,
-    obj.func(),
+    WHILE (obj.b <= 8_us) DO {
+        obj.b = obj.b * 2_us,
+        PRINT obj.b,
+        obj.func(),
+    },
 
 
-    *{WHILE (obj.b <= 8_us) DO {
-
-    }, }*
-
-}
+}*

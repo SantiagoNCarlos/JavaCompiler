@@ -29,15 +29,15 @@ public class MulConstructor implements CodeConstructor {
         switch (node.getType()) {
             case UsesType.USHORT ->
                 returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
-                        "\tMUL AL, " + rightNodeToken + "\n" +
+                        "\tMUL " + rightNodeToken + "\n" +
                         "\tMOV " + auxVariableName + ",AL"; // Store the 8 bit USHORT mul in aux variable.
             case UsesType.LONG ->
                 returnCode = "\tMOV EAX, " + leftNodeToken + "\n" +
-                         "\tMUL EAX, " + rightNodeToken + "\n" +
+                         "\tMUL " + rightNodeToken + "\n" +
                          "\tMOV " + auxVariableName + ",EAX"; // Store the 32 bit LONG mul in aux variable.
             case UsesType.FLOAT ->
-                returnCode = "\tFLD " + leftNodeToken.replace(".", "_").replace(":", "_") + "\n" + // Load left node to FPU stack
-                        "\tFLD " + rightNodeToken.replace(".", "_").replace(":", "_") + "\n" + // Load right node to FPU stack
+                returnCode = "\tFLD " + leftNodeToken.replace(".", "_").replace(":", "_").replace("+","_") + "\n" + // Load left node to FPU stack
+                        "\tFLD " + rightNodeToken.replace(".", "_").replace(":", "_").replace("+","_") + "\n" + // Load right node to FPU stack
                         "\tFMUL \n" + // Multiply...
                         "\tFLD ST(0)\n" + // Duplicate the result (ST(0) is now also in ST(1))
                         "\tFABS \n" + // Take the absolute value of the result in ST(0)

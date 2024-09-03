@@ -24,9 +24,10 @@ public class PrintConstructor implements CodeConstructor {
         System.out.println("[ " + token + " ]" + " " + type);
         return switch (type) {
             case UsesType.LONG -> "\tinvoke printf, offset formatStringLong, " + token.replace(":", "_") + "\n";
-            case UsesType.USHORT -> "\tinvoke printf, offset formatStringUShort, " + token.replace(":", "_") + "\n";
-            case UsesType.FLOAT -> "\tinvoke printf, offset formatStringFloat, " + token.replace(":", "_") + "\n";
-            case UsesType.CADENA -> "\tinvoke printf, addr " + "s_" + token.replace(" ", "_") + "\n"; // Asumiendo que 'token' es una cadena de caracteres
+//            case UsesType.USHORT -> "\tinvoke printf, cfm$(\"%.%llu\\n\"), " + token.replace(":", "_") + "\n";
+            case UsesType.USHORT -> "\tinvoke printf, cfm$(\"%hu\\n\"), " + token.replace(":", "_") + "\n";
+            case UsesType.FLOAT -> "\tinvoke printf, cfm$(\"%.20Lf\\n\"), " + token.replace(":", "_") + "\n";
+            case UsesType.CADENA -> "\tinvoke StdOut, addr " + "s_" + token.replace(" ", "_") + "\n"; // Asumiendo que 'token' es una cadena de caracteres
             default -> "";
         };
     }
