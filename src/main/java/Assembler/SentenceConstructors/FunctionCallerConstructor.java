@@ -26,7 +26,7 @@ public class FunctionCallerConstructor implements CodeConstructor {
                     funcName = leftChild.getName();
 
                     // Add realtime check for recursiveness! If it's the first time you enter a function, set it's dir as current_function!
-                    returnCode = "\tMOV EAX, OFFSET FUNCTION_" + funcName.replace(":", "_") + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
+                    returnCode = "\tMOV EAX, OFFSET FUNCTION_" + CodeConstructor.replaceTokenUnvalidChars(funcName) + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
 
                     if (rightChild.getLeftChild() != null) {
                         final String parameterType = rightChild.getLeftChild().getType();
@@ -39,7 +39,7 @@ public class FunctionCallerConstructor implements CodeConstructor {
                         if (funcAtt.isPresent()) {
                             Attribute paramAtt = funcAtt.get().getParameter();
                             if (paramAtt != null) {
-                                auxVariableName += paramAtt.getToken().replace(":", "_");
+                                auxVariableName += CodeConstructor.replaceTokenUnvalidChars(paramAtt.getToken());
                             }
                         }
 
@@ -64,7 +64,7 @@ public class FunctionCallerConstructor implements CodeConstructor {
             }
         }
 
-        returnCode += "\n\tCALL FUNCTION_" + funcName.replace(":", "_") + "\n";
+        returnCode += "\n\tCALL FUNCTION_" + CodeConstructor.replaceTokenUnvalidChars(funcName) + "\n";
 
         return returnCode;
     }
@@ -74,12 +74,12 @@ public class FunctionCallerConstructor implements CodeConstructor {
             return AccessConstructor.generateStructureCode(parameterNode);
         }
         if (!parameterNode.isLeaf()) {
-            return parameterNode.getLeftChild().getName().replace(":", "_");
+            return CodeConstructor.replaceTokenUnvalidChars(parameterNode.getLeftChild().getName());
         }
         Optional<Attribute> attr = SymbolTable.getInstance().getAttribute(parameterNode.getName());
         if (attr.isPresent() && attr.get().getUso().equals(UsesType.CONSTANT)) {
-            return "c_" + parameterNode.getName().replace(":", "_").replace(".","_");
+            return "c_" + CodeConstructor.replaceTokenUnvalidChars(parameterNode.getName());
         }
-        return parameterNode.getName().replace(":", "_");
+        return CodeConstructor.replaceTokenUnvalidChars(parameterNode.getName());
     }
 }

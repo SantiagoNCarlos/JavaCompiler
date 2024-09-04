@@ -1,13 +1,4 @@
 {
-    FLOAT x,
-    x = 2.40282347e+38,
-
-    x = x * 1.0,
-    PRINT x,
-}
-
-*{
-
     CLASS clase {
         USHORT b,
         VOID func() {
@@ -23,13 +14,18 @@
     }
 
     clase obj,
-    obj.b = 2_us,
 
     WHILE (obj.b <= 8_us) DO {
+        obj.b = 2_us,
         obj.b = obj.b * 2_us,
         PRINT obj.b,
         obj.func(),
     },
+}
+
+*{
+
+
 
 
 }*

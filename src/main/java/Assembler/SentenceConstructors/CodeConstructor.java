@@ -23,4 +23,10 @@ public interface CodeConstructor {
 		}
 		return returnedToken.replace(":", "_");
 	}
+
+	static String replaceTokenUnvalidChars(String token) { // Removes all unvalid characters for assembler
+		return token.replace(":", "_").replace("+","_")
+				.replace("-","_").replace("#","")
+				.replace(" ", "_").replace(".", "_");
+	}
 }

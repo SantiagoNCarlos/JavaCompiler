@@ -14,8 +14,8 @@ public class DivConstructor implements CodeConstructor {
 		SyntaxNode leftChild = node.getLeftChild();
 		SyntaxNode rightChild = node.getRightChild();
 
-		String leftNodeToken = CodeConstructor.getToken(leftChild);
-		String rightNodeToken = CodeConstructor.getToken(rightChild);
+		String leftNodeToken = CodeConstructor.replaceTokenUnvalidChars(CodeConstructor.getToken(leftChild));
+		String rightNodeToken = CodeConstructor.replaceTokenUnvalidChars(CodeConstructor.getToken(rightChild));
 
 		return createDirective(node, leftNodeToken, rightNodeToken);
 	}
@@ -29,15 +29,15 @@ public class DivConstructor implements CodeConstructor {
         switch (node.getType()) {
             case UsesType.USHORT ->
                         returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
-                        "\tDIV AL, " + rightNodeToken + "\n" +
+                        "\tDIV " + rightNodeToken + "\n" +
                         "\tMOV " + auxVariableName + ",AL"; // Store the 8 bit USHORT mul in aux variable.
             case UsesType.LONG ->
                         returnCode = "\tMOV EAX, " + leftNodeToken + "\n" +
-                        "\tDIV EAX, " + rightNodeToken + "\n" +
+                        "\tDIV " + rightNodeToken + "\n" +
                         "\tMOV " + auxVariableName + ",EAX"; // Store the 32 bit LONG mul in aux variable.
             case UsesType.FLOAT ->
-                        returnCode = "\tFLD " + leftNodeToken.replace(".", "_").replace(":", "_").replace("+","_") + "\n" + // Load left node to FPU stack
-                        "\tFLD " + rightNodeToken.replace(".", "_").replace(":", "_").replace("+","_") + "\n" + // Load right node to FPU stack
+                        returnCode = "\tFLD " + leftNodeToken + "\n" + // Load left node to FPU stack
+                        "\tFLD " + rightNodeToken + "\n" + // Load right node to FPU stack
                         "\tFDIV\n" + // Divide...
                         "\tFSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
         }

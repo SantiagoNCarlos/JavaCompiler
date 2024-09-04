@@ -41,7 +41,7 @@ public class AccessConstructor implements CodeConstructor {
         for (Attribute entry : entries) {
             if (entry.getToken().contains(objectName + ":") && entry.getUso().equals(UsesType.CLASS_VAR)) {
                 className = entry.getType();
-                fullObjectName = entry.getToken().replace(":", "_");
+                fullObjectName = CodeConstructor.replaceTokenUnvalidChars(entry.getToken());
                 break;
             }
         }

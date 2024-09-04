@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import AnalizadorLexico.Attribute;
 import AnalizadorLexico.SymbolTable;
-import Assembler.SentenceConstructors.AccessConstructor;
 
 /** Clase Nodo del �rbol que conserva el nombre, el tipo y si es una hoja */
 public class SyntaxNode {
@@ -13,6 +12,7 @@ public class SyntaxNode {
     private SyntaxNode rightChild;
     private boolean isLeaf;
     private String type = "";
+    private boolean isPropagated = false;
 
     public SyntaxNode(String name, SyntaxNode leftChild, SyntaxNode rightChild){
         this.name = name;
@@ -91,6 +91,14 @@ public class SyntaxNode {
         this.name = name;
     }
 
+    public boolean isPropagated() {
+        return isPropagated;
+    }
+
+    public void setPropagated(boolean propagated) {
+        isPropagated = propagated;
+    }
+
     @Override
     public String toString() {
         return "SyntaxNode [name=" + name + ", leftChild=" + leftChild + ", rightChild=" + rightChild + ", isLeaf=" + isLeaf + ", type=" + type + "]";
@@ -110,4 +118,6 @@ public class SyntaxNode {
 //    	System.out.println(entrada);
     	return null;
     }
+
+
 }

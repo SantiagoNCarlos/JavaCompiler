@@ -1,5 +1,6 @@
 package Assembler;
 
+import AnalizadorSintactico.Parser;
 import ArbolSintactico.SyntaxNode;
 
 import java.util.Objects;
@@ -23,7 +24,9 @@ public class SyntaxTreeDecoder {
                 final String[] parts = fatherNodeName.split("=", 2); // Limitamos a 2 partes
 
                 switch (parts[0].toLowerCase()) {
-                    case "if" -> CodeGenerator.enviromentCountStack.push(false);
+                    case "if" -> {
+                        CodeGenerator.enviromentCountStack.push(false);
+                    }
                     case "camino" -> {
                         CodeGenerator.enviromentCountStack.pop();
                         CodeGenerator.enviromentCountStack.push(true);

@@ -771,6 +771,7 @@ public static Boolean flagAmbitoCambiado = false;
 public static Map<String, String> classFullNames = new HashMap<>();
 public static Map<String, ArrayList<String>> compositionMap = new HashMap<>();
 public static String currentClass = "";
+public static boolean isConditionOrWhileUsed = false;
 
 private boolean metodoExisteEnClase(String classType, String methodName) {
     ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(classType));
@@ -1112,12 +1113,19 @@ public String processInteger(String value, boolean isPositive) {
             if (outOfRange) {
                 logger.logWarningLexical("Warning linea " + LexicalAnalyzer.getLine() + ": constante de tipo " + type_cte + " fuera de los rangos permitidos. SerÃ¡ truncado");
                 suffix = (suffix == null) ? "" : ("_" + suffix);
+
                 value = delimiter + suffix;
                 entrada.get().setToken(value);
                 tablaSimbolos.updateKey(keyInMap, value);
             }
         } catch (NumberFormatException e) {
             logger.logWarningLexical("Warning linea " + LexicalAnalyzer.getLine() + ": constante de tipo " + type_cte + " fuera de los rangos permitidos. Serï¿½ truncado");
+            if (isPositive) {
+              delimiter = type_cte.equals(UsesType.USHORT) ? String.valueOf(DelimiterType.maxShort) : String.valueOf(DelimiterType.maxLong);
+            } else {
+              delimiter = type_cte.equals(UsesType.USHORT) ? String.valueOf(DelimiterType.minShort) : String.valueOf(DelimiterType.minLong);
+            }
+
             suffix = (suffix == null) ? "" : ("_" + suffix);
             value = delimiter + suffix;
             entrada.get().setToken(value);
@@ -1645,9 +1653,7 @@ case 33:
 
                             if (!tipo_validado.equals("Error")) {
 
-                                var asign = new SyntaxNode("=", leftSyntaxNode, rightSyntaxNode);
-                                asign.setType(tipo_validado);
-                                yyval = new ParserVal(asign);
+
 
                                 var t = SymbolTable.getInstance();
 
@@ -1663,6 +1669,10 @@ case 33:
                                           entry.setActive(true);
                                           entry.setValue(rightSyntaxNode.getName());
                                       } else {
+                                          var asign = new SyntaxNode("=", leftSyntaxNode, rightSyntaxNode);
+                                          asign.setType(tipo_validado);
+                                          yyval = new ParserVal(asign);
+
                                           entry.setActive(false);
                                           entry.setValue(null);
                                       }
@@ -1693,9 +1703,10 @@ case 35:
                     String tipo_validado = validarTipos(accessNode, rightSyntaxNode, true);
 
                     if (!tipo_validado.equals("Error")) {
-                        var asign = new SyntaxNode("=", accessNode, rightSyntaxNode);
-                        asign.setType(tipo_validado);
-                        yyval = new ParserVal(asign);
+
+                        var assign = new SyntaxNode("=", accessNode, rightSyntaxNode);
+                        assign.setType(tipo_validado);
+                        yyval = new ParserVal(assign);
 
                         Attribute memberAttr = getMemberVarAttribute(accessNode);
 
@@ -1705,9 +1716,11 @@ case 35:
                             if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { /* If its a leaf node, then the value its a constant*/
                               memberAttr.setActive(true);
                               memberAttr.setValue(rightSyntaxNode.getName());
+                              assign.setPropagated(true);
                             } else {
                               memberAttr.setActive(false);
                               memberAttr.setValue(null);
+                              assign.setPropagated(false);
                             }
                         }
                     }
@@ -1801,8 +1814,7 @@ case 39:
                                 if (!nombreCompleto.equals("Error")) {
                                     var t = SymbolTable.getInstance();
                                     var entrada = t.getAttribute(nombreCompleto);
-                                    if (entrada.isPresent())
-                                        entrada.get().setUsadaDerecho(true);
+                                    entrada.ifPresent(attribute -> attribute.setUsadaDerecho(true));
                                 }
                             }
                         }
@@ -1840,7 +1852,7 @@ case 43:
                                             Attribute entry = entrada.get();
                                             entry.setUsadaDerecho(true);
 
-                                            if (entry.isActive()) {
+                                            if (entry.isActive() && !Parser.isConditionOrWhileUsed) {
                                                 final String value = entry.getValue();
 
                                                 var x = new SyntaxNode("*", (SyntaxNode) val_peek(2).obj, new SyntaxNode(value, entry.getType()));
@@ -1856,7 +1868,7 @@ case 43:
                                 } else {
                                     if (factorNode.getName().equalsIgnoreCase("acceso")) {
                                         Attribute memberAttr = getMemberVarAttribute(factorNode);
-                                        if (memberAttr != null && memberAttr.isActive()) {
+                                        if (memberAttr != null && memberAttr.isActive() && !Parser.isConditionOrWhileUsed) {
                                             final String value = memberAttr.getValue();
 
                                             var x = new SyntaxNode("*", (SyntaxNode) val_peek(2).obj, new SyntaxNode(value, memberAttr.getType()));
@@ -1892,7 +1904,7 @@ case 44:
                                             Attribute entry = entrada.get();
                                             entry.setUsadaDerecho(true);
 
-                                            if (entry.isActive()) {
+                                            if (entry.isActive() && !Parser.isConditionOrWhileUsed) {
                                                 final String value = entry.getValue();
 
                                                 var x = new SyntaxNode("/", (SyntaxNode) val_peek(2).obj, new SyntaxNode(value, entry.getType()));
@@ -1908,7 +1920,7 @@ case 44:
                                 } else {
                                     if (factorNode.getName().equalsIgnoreCase("acceso")) {
                                         Attribute memberAttr = getMemberVarAttribute(factorNode);
-                                        if (memberAttr != null && memberAttr.isActive()) {
+                                        if (memberAttr != null && memberAttr.isActive() && !Parser.isConditionOrWhileUsed) {
                                             final String value = memberAttr.getValue();
 
                                             var x = new SyntaxNode("/", (SyntaxNode) val_peek(2).obj, new SyntaxNode(value, memberAttr.getType()));
@@ -1955,7 +1967,7 @@ case 47:
                                         Attribute entry = entrada.get();
                                         entry.setUsadaDerecho(true);
 
-                                        if (entry.isActive()) {
+                                        if (entry.isActive() && !Parser.isConditionOrWhileUsed) {
                                             final String value = entry.getValue();
 
                                             yyval = new ParserVal(new SyntaxNode(value, entry.getType()));
@@ -1967,7 +1979,7 @@ case 47:
                             } else {
                                 if (node.getName().equalsIgnoreCase("acceso")) {
                                     Attribute memberAttr = getMemberVarAttribute(node);
-                                    if (memberAttr != null && memberAttr.isActive()) {
+                                    if (memberAttr != null && memberAttr.isActive() && !Parser.isConditionOrWhileUsed) {
                                         final String value = memberAttr.getValue();
                                         yyval = new ParserVal(new SyntaxNode(value, memberAttr.getType()));
                                     } else {
@@ -2001,7 +2013,7 @@ case 50:
                                 if (symbolType.equals(UsesType.USHORT)) {
                                     finalValue = value;
                                 } else {
-                                    finalValue = "-" + value;
+                                    finalValue = (value.contains("-") ? "" : "-") + value;
                                     SymbolTable.addSymbol(finalValue, TokenType.CONSTANT, symbolType, UsesType.CONSTANT, LexicalAnalyzer.getLine());
                                 }
                                 yyval = new ParserVal(new SyntaxNode(finalValue, symbolType)); /* Crear un nodo para la constante*/
@@ -2236,6 +2248,7 @@ case 87:
 {
                     logger.logDebugSyntax("Bloque WHILE en la linea " + LexicalAnalyzer.getLine());
                     yyval = new ParserVal(new SyntaxNode("while", (SyntaxNode)val_peek(2).obj, (SyntaxNode)val_peek(0).obj));
+                    isConditionOrWhileUsed = false;
             }
 break;
 case 88:

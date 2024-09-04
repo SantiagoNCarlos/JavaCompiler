@@ -1,23 +1,22 @@
-.386
-.model flat, stdcall
-option casemap:none
+;.386
+;.model flat, stdcall
+;option casemap:none
 
 
-include \masm32\include\windows.inc
-include \masm32\include\kernel32.inc
-include \masm32\include\masm32.inc
+include \masm32\include\masm32rt.inc
 
 includelib \masm32\lib\kernel32.lib
 includelib \masm32\lib\masm32.lib
 includelib \masm32\lib\msvcrt.lib
+includelib \masm32\lib\user32.lib
+
+dll_dllcrt0 PROTO C
 printf PROTO C :PTR BYTE, :VARARG
 
 .stack 200h
 .data
 
-	formatStringLong db "%d", 0
-	formatStringUShort db "%hu", 0
-	formatStringFloat db "%f", 0
+	_float_aux_print_ DQ 0
 	_current_function_ DD 0
 	_max_float_value_ DD 3.40282347e+38
 	SumOverflowErrorMsg DB "Overflow detected in a INTEGER SUM operation", 10, 0
@@ -28,7 +27,7 @@ printf PROTO C :PTR BYTE, :VARARG
 	pp_global_clase2_var_global DD ?
 	c_9_8 DD 9.8
 	c_global_testclase_foo DD ?
-	s_#_AAA123_142_ DB "# AAA123 142 ", 10, 0
+	s__AAA123_142_ DB " AAA123 142 ", 10, 0
 	l2_global_testclase DD ?
 	l1_global_testclase_prueba_global DD ?
 	pp_global_clase2_var_global_prueba_global DD ?
@@ -53,23 +52,7 @@ printf PROTO C :PTR BYTE, :VARARG
 .code
 start:
 
-	FUNCTION_foo2_global_clase2 PROC
-	MOV EAX, c_2_l
-	MOV z_global_clase2_foo2,EAX
-
-	MOV _current_function_, 0
-	RET 
-	FUNCTION_foo2_global_clase2 ENDP
-
-	FUNCTION_foo_global_testclase PROC
-	FLD c_1_2
-	FSTP c_global_testclase_foo
-
-	MOV _current_function_, 0
-	RET 
-	FUNCTION_foo_global_testclase ENDP
-
-	invoke printf, addr # AAA123 142 
+	invoke StdOut, addr s__AAA123_142_
 
 	MOV EAX, pp_global_clase2_var_global
 	MOV k_global,EAX
@@ -81,6 +64,10 @@ start:
 
 	FLD @aux1
 	FSTP cc_global
+
+	FLD cc_global
+	FSTP _float_aux_print_
+	invoke printf, cfm$("%.20Lf\n"), _float_aux_print_
 
 	FLD cc_global
 	FLD c_9_8
@@ -101,22 +88,34 @@ start:
 	CMP EAX, _current_function_
 	JE _RecursionError_
 	MOV _current_function_, EAX
+
 	FLD c_global_testclase_foo_prueba_global
 	FSTP c_global_testclase_foo
 
 	CALL FUNCTION_foo_global_testclase
 
+	FLD c_global_testclase_foo
+	FSTP c_global_testclase_foo_prueba_global
+
 	FLD uu_global
-	FLD cc_global
-	FSTSW aux_mem_2bytes
-	MOV AX, aux_mem_2bytes
+	FCOM cc_global
+	FSTSW AX
 	SAHF
 	JNE label1
 
-	FLD c_5_9
-	FSTP uu_global
-
 	label1:
+
+	JMP _end_
+
+FUNCTION_foo2_global_clase2 PROC
+	MOV _current_function_, 0
+	RET 
+FUNCTION_foo2_global_clase2 ENDP
+
+FUNCTION_foo_global_testclase PROC
+	MOV _current_function_, 0
+	RET 
+FUNCTION_foo_global_testclase ENDP
 
 	JMP _end_
 	_SumOverflowError_:
@@ -129,4 +128,5 @@ start:
 	invoke StdOut, addr RecursionErrorMsg
 	JMP _end_
 	_end_:
+	invoke ExitProcess, 0
 END start

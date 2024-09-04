@@ -185,6 +185,11 @@ asignacion:
                                           entry.setActive(true);
                                           entry.setValue(rightSyntaxNode.getName());
                                       } else {
+                                          // Only create node if there's not a constant. (Delete previous declaration)
+                                          //var asign = new SyntaxNode("=", leftSyntaxNode, rightSyntaxNode);
+                                          //asign.setType(tipo_validado);
+                                          //$$ = new ParserVal(asign);
+
                                           entry.setActive(false);
                                           entry.setValue(null);
                                       }
@@ -222,6 +227,12 @@ asignacion:
                               memberAttr.setActive(true);
                               memberAttr.setValue(rightSyntaxNode.getName());
                             } else {
+                              // Only create node if there's not a constant. (Delete previous declaration)
+                              //var asign = new SyntaxNode("=", accessNode, rightSyntaxNode);
+                              //asign.setType(tipo_validado);
+                              //$$ = new ParserVal(asign);
+
+
                               memberAttr.setActive(false);
                               memberAttr.setValue(null);
                             }
@@ -1531,6 +1542,12 @@ public String processInteger(String value, boolean isPositive) {
             }
         } catch (NumberFormatException e) {
             logger.logWarningLexical("Warning linea " + LexicalAnalyzer.getLine() + ": constante de tipo " + type_cte + " fuera de los rangos permitidos. Serï¿½ truncado");
+            if (isPositive) {
+              delimiter = type_cte.equals(UsesType.USHORT) ? String.valueOf(DelimiterType.maxShort) : String.valueOf(DelimiterType.maxLong);
+            } else {
+              delimiter = type_cte.equals(UsesType.USHORT) ? String.valueOf(DelimiterType.minShort) : String.valueOf(DelimiterType.minLong);
+            }
+
             suffix = (suffix == null) ? "" : ("_" + suffix);
             value = delimiter + suffix;
             entrada.get().setToken(value);

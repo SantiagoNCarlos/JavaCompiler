@@ -17,8 +17,8 @@ public class ConditionConstructor implements CodeConstructor {
 		SyntaxNode leftChild = node.getLeftChild();
 		SyntaxNode rightChild = node.getRightChild();
 
-		String leftNodeToken = CodeConstructor.getToken(leftChild);
-		String rightNodeToken = CodeConstructor.getToken(rightChild);
+		String leftNodeToken = CodeConstructor.replaceTokenUnvalidChars(CodeConstructor.getToken(leftChild));
+		String rightNodeToken = CodeConstructor.replaceTokenUnvalidChars(CodeConstructor.getToken(rightChild));
 
 		return createDirective(node, leftNodeToken, rightNodeToken);
 	}
@@ -47,12 +47,11 @@ public class ConditionConstructor implements CodeConstructor {
                             "\t" + assembler_command + labelName + "\n"; // Use sentence to determine if jump is needed
             }
             case UsesType.FLOAT -> {
-                returnCode = "\tFLD " + leftNodeToken.replace(".", "_").replace(":", "_").replace("+","_") + "\n" + // Load left node to FPU stack
-                            "\tFLD " + rightNodeToken.replace(".", "_").replace(":", "_").replace("+","_") + "\n" + // Load right node to FPU stack
-                            "\tFSTSW aux_mem_2bytes\n" + // Compare...
-                            "\tMOV AX, aux_mem_2bytes\n" +
-                            "\tSAHF\n" + // Set the state bits in flags to enable comparison next
-                            "\t" + assembler_command + labelName + "\n";
+                returnCode = "\tFLD " + leftNodeToken + "\n" + // Load left node to FPU stack
+                        "\tFCOM " + rightNodeToken + "\n" + // Compare to value on right node
+                        "\tFSTSW AX\n" + // Store FPU status word in AX
+                        "\tSAHF\n" + // Set the state bits in flags to enable comparison next
+                        "\t" + assembler_command + labelName + "\n";
             }
         }
 

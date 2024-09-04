@@ -4,28 +4,33 @@
     VOID subtract(FLOAT sub){
 
         CHECK FLOAT c; d,
-        c = -4.324,
-        d = -23.4562,
+        c = -4.3,
+        d = -23.4,
         sub = c - d,
         d = d + sub,
+
+        IF (d <= -4.3) {
+            PRINT # CUENTA OK #,
+        } END_IF,
+
         RETURN,
     },
 
     VOID divide() {
         CHECK USHORT x;y,
-        x = -3_us,
+        x = 2_us,
         y = 3_us,
         CHECK FLOAT division,
         division = x / y,
-        WHILE ( x < 6_us) DO {
-	    	FLOAT bb,
-	    	bb = 7.77777,
-	    	y = 99_l,
-	    },
+        IF ( division >= 0.6) {
+	    	PRINT # OTRA CUENTA OK #,
+	    }
+	    END_IF,
 	    RETURN,
     },
 
     subtract(sub),
     divide(),
 	sub = 6_l - 3_l,
+	PRINT sub,
 }

@@ -21,6 +21,8 @@
 	k = var.pp,
 	cc = cc + 1.0,
 
+	PRINT cc,
+
 	FLOAT uu,
 	uu = cc * 9.8,
 	

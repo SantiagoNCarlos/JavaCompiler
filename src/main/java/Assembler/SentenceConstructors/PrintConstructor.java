@@ -10,7 +10,7 @@ public class PrintConstructor implements CodeConstructor {
     public static String generateStructureCode(SyntaxNode node) {
 		SyntaxNode leftChild = node.getLeftChild();
 
-		final String leftNodeToken = CodeConstructor.getToken(leftChild).replace("#","");
+		final String leftNodeToken = CodeConstructor.replaceTokenUnvalidChars(CodeConstructor.getToken(leftChild));
         final String type = leftChild.getType();
 
         node.setLeftChild(null);
@@ -23,11 +23,12 @@ public class PrintConstructor implements CodeConstructor {
     private static String generatePrintCode(String token, String type) {
         System.out.println("[ " + token + " ]" + " " + type);
         return switch (type) {
-            case UsesType.LONG -> "\tinvoke printf, offset formatStringLong, " + token.replace(":", "_") + "\n";
-//            case UsesType.USHORT -> "\tinvoke printf, cfm$(\"%.%llu\\n\"), " + token.replace(":", "_") + "\n";
-            case UsesType.USHORT -> "\tinvoke printf, cfm$(\"%hu\\n\"), " + token.replace(":", "_") + "\n";
-            case UsesType.FLOAT -> "\tinvoke printf, cfm$(\"%.20Lf\\n\"), " + token.replace(":", "_") + "\n";
-            case UsesType.CADENA -> "\tinvoke StdOut, addr " + "s_" + token.replace(" ", "_") + "\n"; // Asumiendo que 'token' es una cadena de caracteres
+            case UsesType.LONG -> "\tinvoke printf, cfm$(\"%d\\n\"), " + CodeConstructor.replaceTokenUnvalidChars(token) + "\n";
+            case UsesType.USHORT -> "\tinvoke printf, cfm$(\"%hu\\n\"), " + CodeConstructor.replaceTokenUnvalidChars(token) + "\n";
+            case UsesType.FLOAT ->  "\tFLD " + CodeConstructor.replaceTokenUnvalidChars(token) + // For floats, we pass the value to a double. Printf expects doubles!
+                                    "\n\tFSTP _float_aux_print_" +
+                                    "\n\tinvoke printf, cfm$(\"%.20Lf\\n\"), _float_aux_print_\n";
+            case UsesType.CADENA -> "\tinvoke StdOut, addr " + "s_" + CodeConstructor.replaceTokenUnvalidChars(token) + "\n"; // Asumiendo que 'token' es una cadena de caracteres
             default -> "";
         };
     }

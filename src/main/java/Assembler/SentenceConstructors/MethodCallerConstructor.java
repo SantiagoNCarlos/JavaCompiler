@@ -33,7 +33,7 @@ public class MethodCallerConstructor implements CodeConstructor {
             if (parameterNode.getName().equalsIgnoreCase("parametro")) {
                 funcName = getFullFuncName(rightChild.getName(), leftChild);
 
-                returnCode += "\tMOV EAX, OFFSET FUNCTION_" + funcName.replace(":", "_") + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
+                returnCode += "\tMOV EAX, OFFSET FUNCTION_" + CodeConstructor.replaceTokenUnvalidChars(funcName) + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
 
                 Pair<String, String> membersPair = loadCorrectMembers(node.getLeftChild(), node.getRightChild());
                 returnCode += membersPair.getLeft();
@@ -49,7 +49,7 @@ public class MethodCallerConstructor implements CodeConstructor {
                 if (funcAtt.isPresent()) {
                     Attribute paramAtt = funcAtt.get().getParameter();
                     if (paramAtt != null) {
-                        auxVariableName += paramAtt.getToken().replace(":", "_");
+                        auxVariableName += CodeConstructor.replaceTokenUnvalidChars(paramAtt.getToken());
                     }
                 }
 
@@ -70,13 +70,13 @@ public class MethodCallerConstructor implements CodeConstructor {
             }
         } else { // Function does not receive any parameters!
             funcName = getFullFuncName(rightChild.getName(), leftChild);
-            returnCode = "\tMOV EAX, OFFSET FUNCTION_" + funcName.replace(":", "_") + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
+            returnCode = "\tMOV EAX, OFFSET FUNCTION_" + CodeConstructor.replaceTokenUnvalidChars(funcName) + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
             Pair<String, String> membersPair = loadCorrectMembers(node.getLeftChild(), node.getRightChild());
             returnCode += "\n" + membersPair.getLeft();
             restoreMemberState = membersPair.getRight();
         }
 
-        returnCode += "\n\tCALL FUNCTION_" + funcName.replace(":", "_") + "\n";
+        returnCode += "\n\tCALL FUNCTION_" + CodeConstructor.replaceTokenUnvalidChars(funcName) + "\n";
 
         returnCode += "\n" + restoreMemberState;
 
@@ -88,13 +88,13 @@ public class MethodCallerConstructor implements CodeConstructor {
             return AccessConstructor.generateStructureCode(parameterNode);
         }
         if (!parameterNode.isLeaf()) {
-            return parameterNode.getLeftChild().getName().replace(":", "_");
+            return CodeConstructor.replaceTokenUnvalidChars(parameterNode.getLeftChild().getName());
         }
         Optional<Attribute> attr = SymbolTable.getInstance().getAttribute(parameterNode.getName());
         if (attr.isPresent() && attr.get().getUso().equals(UsesType.CONSTANT)) {
-            return "c_" + parameterNode.getName().replace(":", "_").replace(".","_");
+            return "c_" + CodeConstructor.replaceTokenUnvalidChars(parameterNode.getName());
         }
-        return parameterNode.getName().replace(":", "_");
+        return CodeConstructor.replaceTokenUnvalidChars(parameterNode.getName());
     }
 
     private static String getFullFuncName(final String funcName, SyntaxNode objectNode) {
@@ -147,7 +147,7 @@ public class MethodCallerConstructor implements CodeConstructor {
         if (objectAttr.isPresent()) {
             HashMap<String, String> variablesUsed = getUsedVariables(objectAttr.get().getType(), funcNode.getName());
             for (Map.Entry<String, String> functionVariable : variablesUsed.entrySet()) {
-                final String objectMember = functionVariable.getKey() + "_" + objectAttr.get().getToken().replace(":", "_");
+                final String objectMember = functionVariable.getKey() + "_" + CodeConstructor.replaceTokenUnvalidChars(objectAttr.get().getToken());
                 switch (functionVariable.getValue()) {
                     case UsesType.USHORT -> {
                         returnCode.append("\tMOV AL, ").append(objectMember).append("\n").append( // Load the 8-bit value into AL
@@ -220,7 +220,7 @@ public class MethodCallerConstructor implements CodeConstructor {
                     && scopes != null
                     && (scopes.contains(methodName) || entry.isUsadaDerecho()))
             {
-                members.put(token.replace(":", "_"), entry.getType());
+                members.put(CodeConstructor.replaceTokenUnvalidChars(token), entry.getType());
             }
         }
         return members;
