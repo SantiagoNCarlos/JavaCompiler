@@ -1,10 +1,7 @@
 package Assembler.SentenceConstructors;
 
-import AnalizadorLexico.Attribute;
 import AnalizadorLexico.Enums.UsesType;
 import ArbolSintactico.SyntaxNode;
-
-import java.util.Optional;
 
 public class PrintConstructor implements CodeConstructor {
     public static String generateStructureCode(SyntaxNode node) {

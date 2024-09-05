@@ -1,13 +1,10 @@
 package Assembler.SentenceConstructors;
 
-import AnalizadorLexico.Attribute;
 import AnalizadorLexico.Enums.TokenType;
 import AnalizadorLexico.Enums.UsesType;
 import AnalizadorLexico.SymbolTable;
 import ArbolSintactico.SyntaxNode;
 import Assembler.CodeGenerator;
-
-import java.util.Optional;
 
 public class DivConstructor implements CodeConstructor {
     public static String generateStructureCode(SyntaxNode node) {

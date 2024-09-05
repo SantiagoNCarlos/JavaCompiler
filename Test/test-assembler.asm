@@ -16,23 +16,37 @@ printf PROTO C :PTR BYTE, :VARARG
 .stack 200h
 .data
 
-	aux_2bytes DW 0
+	_float_aux_print_ DQ 0
 	_current_function_ DD 0
 	_max_float_value_ DD 3.40282347e+38
 	SumOverflowErrorMsg DB "Overflow detected in a INTEGER SUM operation", 10, 0
 	ProductOverflowErrorMsg DB "Overflow detected in a FLOAT PRODUCT operation", 10, 0
 	RecursionErrorMsg DB "Recursive call detected", 10, 0
 
-	s__NO_LLEGUE_ DB " NO LLEGUE ", 10, 0
-	c_2_us DB 2
 	b_global_clase_obj_global DB ?
 	s__LLEGUE_ DB " LLEGUE ", 10, 0
 	b_global_clase DB ?
+	s__NO_LLEGUE_ DB " NO LLEGUE ", 10, 0
+	c_3_us DB 3
+	c_2_us DB 2
+	c_global DB ?
+	@aux2 DB ?
 	@aux1 DB ?
 	c_8_us DB 8
 
 .code
 start:
+
+	MOV AL, c_2_us
+	MOV b_global_clase_obj_global,AL
+
+	MOV AL, b_global_clase_obj_global
+	ADD AL, c_3_us
+	MOV @aux1,AL
+	JC _SumOverflowError_
+
+	MOV AL, @aux1
+	MOV c_global,AL
 
 	label1:
 	MOV AL, b_global_clase_obj_global
@@ -40,13 +54,10 @@ start:
 	CMP AL, BL
 	JA label2
 
-	MOV AL, c_2_us
-	MOV b_global_clase_obj_global,AL
-
-	MOV AL, c_2_us
+	MOV AL, b_global_clase_obj_global
 	MUL c_2_us
-	MOV @aux1,AL
-	MOV AL, @aux1
+	MOV @aux2,AL
+	MOV AL, @aux2
 	MOV b_global_clase_obj_global,AL
 
 	invoke printf, cfm$("%hu\n"), b_global_clase_obj_global

@@ -1,9 +1,5 @@
 package Assembler.SentenceConstructors;
 
-import java.util.Objects;
-import java.util.Optional;
-
-import AnalizadorLexico.Attribute;
 import AnalizadorLexico.Enums.UsesType;
 import ArbolSintactico.SyntaxNode;
 

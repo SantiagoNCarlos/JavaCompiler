@@ -16,6 +16,7 @@ public class Attribute {
 	private String value = null;
 	private boolean isActive = false;
 	private boolean wasForwardDeclared = false;
+	private int constantValueBlock = 0;
     
     public Attribute(String token, int id) {
     	this.token = token;
@@ -165,4 +166,12 @@ public class Attribute {
 	public void setWasForwardDeclared(boolean wasForwardDeclared) {
 		this.wasForwardDeclared = wasForwardDeclared;
 	}
+
+    public int getConstantValueBlock() {
+        return constantValueBlock;
+    }
+
+    public void setConstantValueBlock(int constantValueBlock) {
+        this.constantValueBlock = constantValueBlock;
+    }
 }

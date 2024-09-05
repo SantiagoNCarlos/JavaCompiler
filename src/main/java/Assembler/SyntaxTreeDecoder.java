@@ -1,6 +1,5 @@
 package Assembler;
 
-import AnalizadorSintactico.Parser;
 import ArbolSintactico.SyntaxNode;
 
 import java.util.Objects;

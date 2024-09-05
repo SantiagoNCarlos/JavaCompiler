@@ -17,6 +17,8 @@ import AnalizadorLexico.Enums.DelimiterType;
 import AnalizadorLexico.Enums.UsesType;
 import ArbolSintactico.SyntaxNode;
 import java.util.HashMap;
+
+import org.apache.commons.lang3.tuple.Pair;
 %}
 
 %token ID CTE CADENA IF END_IF ELSE CLASS PRINT VOID LONG USHORT FLOAT WHILE DO MENORIGUAL MAYORIGUAL IGUAL NEGADO RETURN MASMAS CTE_FLOTANTE UNEXISTENT_RES_WORD CHECK
@@ -36,16 +38,63 @@ programa:
 			| bloque '}' {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un {.");}
 	   		;
 
+
 bloque:
-            sentencia { $$ = $1; }
-            | bloque sentencia { if ((SyntaxNode) $2.obj != null)
-            							$$ = new ParserVal(new SyntaxNode("Bloque de sentencias", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj)); }
-            
-            
-      		| definicion_class {$$ = $1;}
-      		| bloque definicion_class { if ((SyntaxNode) $2.obj != null)
-      										$$ = new ParserVal(new SyntaxNode("Bloque de sentencias21", (SyntaxNode) $2.obj, (SyntaxNode) $1.obj)); }
+            sentencia {
+                $$ = $1;
+
+            }
+            | bloque sentencia {
+                if ((SyntaxNode) $2.obj != null)
+                    $$ = new ParserVal(new SyntaxNode("Bloque de sentencias", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
+                basicBlockCounter++;
+            }
+      		| definicion_class {
+      		    $$ = $1;
+            }
+      		| bloque definicion_class {
+      		    if ((SyntaxNode) $2.obj != null)
+                    $$ = new ParserVal(new SyntaxNode("Bloque de sentencias21", (SyntaxNode) $2.obj, (SyntaxNode) $1.obj));
+            }
+            | bloque bloque_cambio_bloque_basico {
+                if ((SyntaxNode) $2.obj != null) {
+                    $$ = new ParserVal(new SyntaxNode("Bloque de sentencias - Cambio de bloque", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
+                    basicBlockCounter++;
+                }
+            }
       		;
+/*
+bloque:
+        elemento
+        | bloque elemento {
+            $$ = new ParserVal(new SyntaxNode("Bloque De elementos", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
+        }
+        ;
+
+elemento:
+        grupo_sentencias {
+            $$ = $1;
+            basicBlockCounter++;
+        }
+        | definicion_class {
+            $$ = $1;
+        }
+        | bloque_cambio_bloque_basico {
+            $$ = $1;
+            basicBlockCounter++;
+        }
+        ;
+
+
+grupo_sentencias:
+        sentencia {
+            $$ = $1;
+        }
+        | grupo_sentencias sentencia {
+            $$ = new ParserVal(new SyntaxNode("Grupo de Sentencias", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
+        }
+        ;
+        */
 
 sentencia:
             ejecucion ',' { $$ = $1; }
@@ -56,10 +105,13 @@ sentencia:
             | declaracion error { logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','."); }
          	;
 
+bloque_cambio_bloque_basico:
+            bloque_if ',' { $$ = $1; }
+            | bloque_while ',' { $$ = $1; }
+            ;
+
 ejecucion:
             asignacion { $$ = $1;}
-            | bloque_if { $$ = $1;}
-            | bloque_while { $$ = $1;}
             | impresion { $$ = $1;}
             | expresion { $$ = $1;}
             ;
@@ -77,7 +129,7 @@ declaracion:
             declaracion_var {
                               logger.logDebugSyntax("Declaración1 de variables en la linea " + LexicalAnalyzer.getLine());
                             }
-           	| declaracion_void
+           	| declaracion_void { basicBlockCounter++; }
            	| declaracion_var_class
 	   		;
 
@@ -167,9 +219,9 @@ asignacion:
 
                             if (!tipo_validado.equals("Error")) {
 
-                                var asign = new SyntaxNode("=", leftSyntaxNode, rightSyntaxNode);
-                                asign.setType(tipo_validado);
-                                $$ = new ParserVal(asign);
+                                //var asign = new SyntaxNode("=", leftSyntaxNode, rightSyntaxNode);
+                                //asign.setType(tipo_validado);
+                                //$$ = new ParserVal(asign);
 
                                 var t = SymbolTable.getInstance();
 
@@ -179,16 +231,22 @@ asignacion:
 
                                     entry.addAmbito(ambito);
 
+                                    var asign = new SyntaxNode("=", leftSyntaxNode, rightSyntaxNode);
+                                    asign.setType(tipo_validado);
+
                                     if (rightSyntaxNode != null) {
                                       Optional<Attribute> childNodeValue = rightSyntaxNode.getNodeValue();
                                       if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { /* If its a leaf node, then the value its a constant*/
                                           entry.setActive(true);
                                           entry.setValue(rightSyntaxNode.getName());
+                                          entry.setConstantValueBlock(basicBlockCounter);
+
+                                          //$$ = new ParserVal(null);
+                                          $$ = new ParserVal(asign);
+
                                       } else {
                                           // Only create node if there's not a constant. (Delete previous declaration)
-                                          //var asign = new SyntaxNode("=", leftSyntaxNode, rightSyntaxNode);
-                                          //asign.setType(tipo_validado);
-                                          //$$ = new ParserVal(asign);
+                                          $$ = new ParserVal(asign);
 
                                           entry.setActive(false);
                                           entry.setValue(null);
@@ -214,24 +272,33 @@ asignacion:
                     String tipo_validado = validarTipos(accessNode, rightSyntaxNode, true);
 
                     if (!tipo_validado.equals("Error")) {
-                        var asign = new SyntaxNode("=", accessNode, rightSyntaxNode);
-                        asign.setType(tipo_validado);
-                        $$ = new ParserVal(asign);
+                        //var asign = new SyntaxNode("=", accessNode, rightSyntaxNode);
+                        //asign.setType(tipo_validado);
+                        //$$ = new ParserVal(asign);
 
                         Attribute memberAttr = getMemberVarAttribute(accessNode);
 
                         if (memberAttr != null && rightSyntaxNode != null) {
                             Optional<Attribute> childNodeValue = rightSyntaxNode.getNodeValue();
 
+                            var asignNode = new SyntaxNode("=", accessNode, rightSyntaxNode);
+                            asignNode.setType(tipo_validado);
+
                             if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { // If its a leaf node, then the value its a constant
                               memberAttr.setActive(true);
                               memberAttr.setValue(rightSyntaxNode.getName());
+                              memberAttr.setConstantValueBlock(basicBlockCounter);
+
+                              final String objectName = accessNode.getLeftChild().getName(); // Store propagated asignation constant!
+
+                              propagatedConstantsDefinitionsMap.remove(objectName); // Remove previous constant node if exists
+                              propagatedConstantsDefinitionsMap.put(objectName, asignNode);
+
+                              //$$ = new ParserVal(null);
+                              $$ = new ParserVal(asignNode);
                             } else {
                               // Only create node if there's not a constant. (Delete previous declaration)
-                              //var asign = new SyntaxNode("=", accessNode, rightSyntaxNode);
-                              //asign.setType(tipo_validado);
-                              //$$ = new ParserVal(asign);
-
+                              $$ = new ParserVal(asignNode);
 
                               memberAttr.setActive(false);
                               memberAttr.setValue(null);
@@ -353,7 +420,7 @@ termino:
                                             Attribute entry = entrada.get();
                                             entry.setUsadaDerecho(true);
 
-                                            if (entry.isActive()) {
+                                            if (entry.isActive() && entry.getConstantValueBlock() == basicBlockCounter) {
                                                 final String value = entry.getValue();
 
                                                 var x = new SyntaxNode("*", (SyntaxNode) $1.obj, new SyntaxNode(value, entry.getType()));
@@ -369,7 +436,7 @@ termino:
                                 } else {
                                     if (factorNode.getName().equalsIgnoreCase("acceso")) {
                                         Attribute memberAttr = getMemberVarAttribute(factorNode);
-                                        if (memberAttr != null && memberAttr.isActive()) {
+                                        if (memberAttr != null && memberAttr.isActive() && memberAttr.getConstantValueBlock() == basicBlockCounter) {
                                             final String value = memberAttr.getValue();
 
                                             var x = new SyntaxNode("*", (SyntaxNode) $1.obj, new SyntaxNode(value, memberAttr.getType()));
@@ -402,7 +469,7 @@ termino:
                                             Attribute entry = entrada.get();
                                             entry.setUsadaDerecho(true);
 
-                                            if (entry.isActive()) {
+                                            if (entry.isActive() && entry.getConstantValueBlock() == basicBlockCounter) {
                                                 final String value = entry.getValue();
 
                                                 var x = new SyntaxNode("/", (SyntaxNode) $1.obj, new SyntaxNode(value, entry.getType()));
@@ -418,7 +485,7 @@ termino:
                                 } else {
                                     if (factorNode.getName().equalsIgnoreCase("acceso")) {
                                         Attribute memberAttr = getMemberVarAttribute(factorNode);
-                                        if (memberAttr != null && memberAttr.isActive()) {
+                                        if (memberAttr != null && memberAttr.isActive() && memberAttr.getConstantValueBlock() == basicBlockCounter) {
                                             final String value = memberAttr.getValue();
 
                                             var x = new SyntaxNode("/", (SyntaxNode) $1.obj, new SyntaxNode(value, memberAttr.getType()));
@@ -456,7 +523,7 @@ termino:
                                         Attribute entry = entrada.get();
                                         entry.setUsadaDerecho(true);
 
-                                        if (entry.isActive()) {
+                                        if (entry.isActive() && entry.getConstantValueBlock() == basicBlockCounter) {
                                             final String value = entry.getValue();
 
                                             $$ = new ParserVal(new SyntaxNode(value, entry.getType()));
@@ -468,7 +535,7 @@ termino:
                             } else {
                                 if (node.getName().equalsIgnoreCase("acceso")) {
                                     Attribute memberAttr = getMemberVarAttribute(node);
-                                    if (memberAttr != null && memberAttr.isActive()) {
+                                    if (memberAttr != null && memberAttr.isActive() && memberAttr.getConstantValueBlock() == basicBlockCounter) {
                                         final String value = memberAttr.getValue();
                                         $$ = new ParserVal(new SyntaxNode(value, memberAttr.getType()));
                                     } else {
@@ -1195,6 +1262,8 @@ public static Boolean flagAmbitoCambiado = false;
 public static Map<String, String> classFullNames = new HashMap<>();
 public static Map<String, ArrayList<String>> compositionMap = new HashMap<>();
 public static String currentClass = "";
+public static int basicBlockCounter = 1;
+public static Map<String, SyntaxNode> propagatedConstantsDefinitionsMap = new HashMap<>();
 
 private boolean metodoExisteEnClase(String classType, String methodName) {
     ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(classType));

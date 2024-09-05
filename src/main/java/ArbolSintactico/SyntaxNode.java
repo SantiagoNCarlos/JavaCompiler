@@ -13,6 +13,7 @@ public class SyntaxNode {
     private boolean isLeaf;
     private String type = "";
     private boolean isPropagated = false;
+    private String blockOfPropagation = "";
 
     public SyntaxNode(String name, SyntaxNode leftChild, SyntaxNode rightChild){
         this.name = name;
@@ -120,4 +121,11 @@ public class SyntaxNode {
     }
 
 
+    public String getBlockOfPropagation() {
+        return blockOfPropagation;
+    }
+
+    public void setBlockOfPropagation(String blockOfPropagation) {
+        this.blockOfPropagation = blockOfPropagation;
+    }
 }
