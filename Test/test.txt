@@ -21,8 +21,18 @@
 
     c = obj.b + 3_us,
 
+    LONG a,
+    a = 3_l * obj.b,
+
+    obj.b = c / 1_us,
+
     WHILE (obj.b <= 8_us) DO {
         obj.b = obj.b * 2_us,
+
+        USHORT p,
+        p = 9_us,
+        p = p + 4_us,
+
         PRINT obj.b,
         obj.func(),
     },

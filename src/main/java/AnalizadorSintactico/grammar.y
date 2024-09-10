@@ -30,7 +30,7 @@ n
 %%
 
 /************ PROGRAM - BLOCK - SENTENCES************/
-programa:	
+programa:
             '{' bloque '}' { padre = new SyntaxNode("root", (SyntaxNode) $2.obj , null);
             					verificarReglasCheck();}
            	| '{' '}'
@@ -42,12 +42,17 @@ programa:
 bloque:
             sentencia {
                 $$ = $1;
-
             }
             | bloque sentencia {
-                if ((SyntaxNode) $2.obj != null)
+                if ((SyntaxNode) $2.obj != null) {
                     $$ = new ParserVal(new SyntaxNode("Bloque de sentencias", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
-                basicBlockCounter++;
+
+                }
+
+                String leftNodeName = ((SyntaxNode) $1.obj ).getName();
+                if (leftNodeName != "Bloque de sentencias") {
+                    basicBlockCounter++;
+                }
             }
       		| definicion_class {
       		    $$ = $1;
@@ -56,6 +61,7 @@ bloque:
       		    if ((SyntaxNode) $2.obj != null)
                     $$ = new ParserVal(new SyntaxNode("Bloque de sentencias21", (SyntaxNode) $2.obj, (SyntaxNode) $1.obj));
             }
+            | bloque_cambio_bloque_basico { $$ = $1; }
             | bloque bloque_cambio_bloque_basico {
                 if ((SyntaxNode) $2.obj != null) {
                     $$ = new ParserVal(new SyntaxNode("Bloque de sentencias - Cambio de bloque", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
@@ -63,38 +69,6 @@ bloque:
                 }
             }
       		;
-/*
-bloque:
-        elemento
-        | bloque elemento {
-            $$ = new ParserVal(new SyntaxNode("Bloque De elementos", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
-        }
-        ;
-
-elemento:
-        grupo_sentencias {
-            $$ = $1;
-            basicBlockCounter++;
-        }
-        | definicion_class {
-            $$ = $1;
-        }
-        | bloque_cambio_bloque_basico {
-            $$ = $1;
-            basicBlockCounter++;
-        }
-        ;
-
-
-grupo_sentencias:
-        sentencia {
-            $$ = $1;
-        }
-        | grupo_sentencias sentencia {
-            $$ = new ParserVal(new SyntaxNode("Grupo de Sentencias", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
-        }
-        ;
-        */
 
 sentencia:
             ejecucion ',' { $$ = $1; }
