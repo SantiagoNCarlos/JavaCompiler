@@ -13,7 +13,9 @@ public class SyntaxNode {
     private boolean isLeaf;
     private String type = "";
     private boolean isPropagated = false;
-    private String blockOfPropagation = "";
+    private int blockOfPropagation = 0;
+    private String propagatedValue = "";
+    private String propagatedValueType = "";
 
     public SyntaxNode(String name, SyntaxNode leftChild, SyntaxNode rightChild){
         this.name = name;
@@ -121,11 +123,27 @@ public class SyntaxNode {
     }
 
 
-    public String getBlockOfPropagation() {
+    public int getBlockOfPropagation() {
         return blockOfPropagation;
     }
 
-    public void setBlockOfPropagation(String blockOfPropagation) {
+    public void setBlockOfPropagation(int blockOfPropagation) {
         this.blockOfPropagation = blockOfPropagation;
+    }
+
+    public String getPropagatedValue() {
+        return propagatedValue;
+    }
+
+    public void setPropagatedValue(String propagatedValue) {
+        this.propagatedValue = propagatedValue;
+    }
+
+    public String getPropagatedValueType() {
+        return propagatedValueType;
+    }
+
+    public void setPropagatedValueType(String propagatedValueType) {
+        this.propagatedValueType = propagatedValueType;
     }
 }

@@ -49,23 +49,31 @@ bloque:
 
                 }
 
-                String leftNodeName = ((SyntaxNode) $1.obj ).getName();
-                if (leftNodeName != "Bloque de sentencias") {
-                    basicBlockCounter++;
-                }
+                /*
+                if ($1.obj != null) {
+                    final String leftNodeName = ((SyntaxNode) $1.obj ).getName();
+                    if (leftNodeName != "Bloque de sentencias") {
+                        basicBlockCounter++;
+                    }
+                } */
             }
       		| definicion_class {
       		    $$ = $1;
             }
       		| bloque definicion_class {
-      		    if ((SyntaxNode) $2.obj != null)
+      		    if ($2.obj != null)
                     $$ = new ParserVal(new SyntaxNode("Bloque de sentencias21", (SyntaxNode) $2.obj, (SyntaxNode) $1.obj));
             }
-            | bloque_cambio_bloque_basico { $$ = $1; }
+            | bloque_cambio_bloque_basico {
+                $$ = $1;
+            }
             | bloque bloque_cambio_bloque_basico {
-                if ((SyntaxNode) $2.obj != null) {
+                if ($2.obj != null) {
                     $$ = new ParserVal(new SyntaxNode("Bloque de sentencias - Cambio de bloque", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
                     basicBlockCounter++;
+
+                    propagatedConstantsValuesMap.clear();
+                    checkSubtreeConstantPropagations((SyntaxNode) $2.obj);
                 }
             }
       		;
@@ -205,8 +213,9 @@ asignacion:
 
                                     entry.addAmbito(ambito);
 
-                                    var asign = new SyntaxNode("=", leftSyntaxNode, rightSyntaxNode);
-                                    asign.setType(tipo_validado);
+                                    var asignNode = new SyntaxNode("=", leftSyntaxNode, rightSyntaxNode);
+                                    asignNode.setType(tipo_validado);
+                                    $$ = new ParserVal(asignNode);
 
                                     if (rightSyntaxNode != null) {
                                       Optional<Attribute> childNodeValue = rightSyntaxNode.getNodeValue();
@@ -215,13 +224,14 @@ asignacion:
                                           entry.setValue(rightSyntaxNode.getName());
                                           entry.setConstantValueBlock(basicBlockCounter);
 
-                                          //$$ = new ParserVal(null);
-                                          $$ = new ParserVal(asign);
+                                          final String objectName = leftSyntaxNode.getName(); // Store propagated asignation constant!
 
+                                          propagatedConstantsDefinitionsMap.remove(objectName); // Remove previous constant node if exists
+                                          propagatedConstantsDefinitionsMap.put(objectName, asignNode);
+
+                                          asignNode.setPropagated(true);
+                                          asignNode.setBlockOfPropagation(basicBlockCounter);
                                       } else {
-                                          // Only create node if there's not a constant. (Delete previous declaration)
-                                          $$ = new ParserVal(asign);
-
                                           entry.setActive(false);
                                           entry.setValue(null);
                                       }
@@ -257,6 +267,7 @@ asignacion:
 
                             var asignNode = new SyntaxNode("=", accessNode, rightSyntaxNode);
                             asignNode.setType(tipo_validado);
+                            $$ = new ParserVal(asignNode);
 
                             if (rightSyntaxNode.isLeaf() && childNodeValue.isPresent() && childNodeValue.get().getUso() == UsesType.CONSTANT) { // If its a leaf node, then the value its a constant
                               memberAttr.setActive(true);
@@ -268,12 +279,9 @@ asignacion:
                               propagatedConstantsDefinitionsMap.remove(objectName); // Remove previous constant node if exists
                               propagatedConstantsDefinitionsMap.put(objectName, asignNode);
 
-                              //$$ = new ParserVal(null);
-                              $$ = new ParserVal(asignNode);
+                              asignNode.setPropagated(true);
+                              asignNode.setBlockOfPropagation(basicBlockCounter);
                             } else {
-                              // Only create node if there's not a constant. (Delete previous declaration)
-                              $$ = new ParserVal(asignNode);
-
                               memberAttr.setActive(false);
                               memberAttr.setValue(null);
                             }
@@ -397,7 +405,14 @@ termino:
                                             if (entry.isActive() && entry.getConstantValueBlock() == basicBlockCounter) {
                                                 final String value = entry.getValue();
 
-                                                var x = new SyntaxNode("*", (SyntaxNode) $1.obj, new SyntaxNode(value, entry.getType()));
+                                                factorNode.setPropagated(true);
+                                                factorNode.setBlockOfPropagation(basicBlockCounter);
+                                                factorNode.setPropagatedValue(value);
+                                                factorNode.setPropagatedValueType(entry.getType());
+
+                                                var x = new SyntaxNode("*", (SyntaxNode) $1.obj, factorNode);
+
+                                                //var x = new SyntaxNode("*", (SyntaxNode) $1.obj, new SyntaxNode(value, entry.getType()));
                                                 x.setType(tipo_validado);
                                                 $$ = new ParserVal(x);
                                             } else {
@@ -413,7 +428,14 @@ termino:
                                         if (memberAttr != null && memberAttr.isActive() && memberAttr.getConstantValueBlock() == basicBlockCounter) {
                                             final String value = memberAttr.getValue();
 
-                                            var x = new SyntaxNode("*", (SyntaxNode) $1.obj, new SyntaxNode(value, memberAttr.getType()));
+                                            factorNode.setPropagated(true);
+                                            factorNode.setBlockOfPropagation(basicBlockCounter);
+                                            factorNode.setPropagatedValue(value);
+                                            factorNode.setPropagatedValueType(memberAttr.getType());
+
+                                            //var x = new SyntaxNode("*", (SyntaxNode) $1.obj, new SyntaxNode(value, memberAttr.getType()));
+                                            var x = new SyntaxNode("*", (SyntaxNode) $1.obj, factorNode);
+
                                             x.setType(tipo_validado);
                                             $$ = new ParserVal(x);
                                         } else {
@@ -446,11 +468,17 @@ termino:
                                             if (entry.isActive() && entry.getConstantValueBlock() == basicBlockCounter) {
                                                 final String value = entry.getValue();
 
-                                                var x = new SyntaxNode("/", (SyntaxNode) $1.obj, new SyntaxNode(value, entry.getType()));
+                                                factorNode.setPropagated(true);
+                                                factorNode.setBlockOfPropagation(basicBlockCounter);
+                                                factorNode.setPropagatedValue(value);
+                                                factorNode.setPropagatedValueType(entry.getType());
+
+                                                //var x = new SyntaxNode("/", (SyntaxNode) $1.obj, new SyntaxNode(value, entry.getType()));
+                                                var x = new SyntaxNode("/", (SyntaxNode) $1.obj, factorNode);
                                                 x.setType(tipo_validado);
                                                 $$ = new ParserVal(x);
                                             } else {
-                                                var x = new SyntaxNode("/", (SyntaxNode) $1.obj, (SyntaxNode)  $3.obj);
+                                                var x = new SyntaxNode("/", (SyntaxNode) $1.obj, factorNode);
                                                 x.setType(tipo_validado);
                                                 $$ = new ParserVal(x);
                                             }
@@ -462,7 +490,13 @@ termino:
                                         if (memberAttr != null && memberAttr.isActive() && memberAttr.getConstantValueBlock() == basicBlockCounter) {
                                             final String value = memberAttr.getValue();
 
-                                            var x = new SyntaxNode("/", (SyntaxNode) $1.obj, new SyntaxNode(value, memberAttr.getType()));
+                                            factorNode.setPropagated(true);
+                                            factorNode.setBlockOfPropagation(basicBlockCounter);
+                                            factorNode.setPropagatedValue(value);
+                                            factorNode.setPropagatedValueType(memberAttr.getType());
+
+                                            //var x = new SyntaxNode("/", (SyntaxNode) $1.obj, new SyntaxNode(value, memberAttr.getType()));
+                                            var x = new SyntaxNode("/", (SyntaxNode) $1.obj, factorNode);
                                             x.setType(tipo_validado);
                                             $$ = new ParserVal(x);
                                         } else {
@@ -500,7 +534,15 @@ termino:
                                         if (entry.isActive() && entry.getConstantValueBlock() == basicBlockCounter) {
                                             final String value = entry.getValue();
 
-                                            $$ = new ParserVal(new SyntaxNode(value, entry.getType()));
+                                            SyntaxNode factorNode = (SyntaxNode) $1.obj;
+
+                                            factorNode.setPropagated(true);
+                                            factorNode.setBlockOfPropagation(basicBlockCounter);
+                                            factorNode.setPropagatedValue(value);
+                                            factorNode.setPropagatedValueType(entry.getType());
+
+                                            //$$ = new ParserVal(new SyntaxNode(value, entry.getType()));
+                                            $$ = new ParserVal(factorNode);
                                         } else {
                                             $$ = $1;
                                         }
@@ -511,7 +553,16 @@ termino:
                                     Attribute memberAttr = getMemberVarAttribute(node);
                                     if (memberAttr != null && memberAttr.isActive() && memberAttr.getConstantValueBlock() == basicBlockCounter) {
                                         final String value = memberAttr.getValue();
-                                        $$ = new ParserVal(new SyntaxNode(value, memberAttr.getType()));
+
+                                        SyntaxNode factorNode = (SyntaxNode) $1.obj;
+
+                                        factorNode.setPropagated(true);
+                                        factorNode.setBlockOfPropagation(basicBlockCounter);
+                                        factorNode.setPropagatedValue(value);
+                                        factorNode.setPropagatedValueType(memberAttr.getType());
+
+                                        $$ = new ParserVal(factorNode);
+                                        //$$ = new ParserVal(new SyntaxNode(value, memberAttr.getType()));
                                     } else {
                                         $$ = $1;
                                     }
@@ -1238,6 +1289,54 @@ public static Map<String, ArrayList<String>> compositionMap = new HashMap<>();
 public static String currentClass = "";
 public static int basicBlockCounter = 1;
 public static Map<String, SyntaxNode> propagatedConstantsDefinitionsMap = new HashMap<>();
+public static Map<String, ArrayList<String>> propagatedConstantsValuesMap = new HashMap<>();
+
+private void checkSubtreeConstantPropagations(SyntaxNode node) {
+    if (node != null) {
+        if (node.isPropagated()) {
+            if (node.getName().equals("=")) {
+              final String variableName = node.getLeftChild().getName().equalsIgnoreCase("acceso") ?
+                      node.getLeftChild().getLeftChild().getName() :
+                      node.getLeftChild().getName();
+
+
+              node.setBlockOfPropagation(basicBlockCounter);
+
+
+              ArrayList<String> valuesList = propagatedConstantsValuesMap.get(variableName);
+              if (valuesList == null) {
+                valuesList = new ArrayList<>();
+              }
+              valuesList.add(node.getPropagatedValue());
+
+
+    //          if (propagatedConstantsDefinitionsMap.containsKey(variableName)) {
+    //            SyntaxNode assignNode = propagatedConstantsDefinitionsMap.get(variableName);
+    //
+    //            if (assignNode.getPropagatedValue().equals(node.getPropagatedValue())) {
+    //              assignNode.setBlockOfPropagation(basicBlockCounter); // Update the assign value to ensure its on the correct basic block!
+    //            }
+    //          }
+            } else {
+                final String variableName = node.getName().equalsIgnoreCase("acceso") ?
+                      node.getLeftChild().getName() :
+                      node.getName();
+                ArrayList<String> valuesList = propagatedConstantsValuesMap.get(variableName);
+                if (valuesList != null && valuesList.contains(node.getPropagatedValue())) {
+                  // TO-DO: PROPAGATION IS CORRECT!
+                } else {
+                  // TO-DO: PROPAGATION IS INCORRECT!
+                }
+            }
+        }
+
+
+        System.out.println(propagatedConstantsValuesMap);
+
+        checkSubtreeConstantPropagations(node.getLeftChild());
+        checkSubtreeConstantPropagations(node.getRightChild());
+    }
+}
 
 private boolean metodoExisteEnClase(String classType, String methodName) {
     ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(classType));

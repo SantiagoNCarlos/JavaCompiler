@@ -49,7 +49,7 @@ start:
 	MOV AL, c_2_us
 	MOV b_global_clase_obj_global,AL
 
-	MOV AL, c_2_us
+	MOV AL, b_global_clase_obj_global
 	ADD AL, c_3_us
 	MOV @aux1,AL
 	JC _SumOverflowError_
@@ -84,7 +84,7 @@ start:
 	MOV AL, c_9_us
 	MOV p_global,AL
 
-	MOV AL, c_9_us
+	MOV AL, p_global
 	ADD AL, c_4_us
 	MOV @aux5,AL
 	JC _SumOverflowError_
