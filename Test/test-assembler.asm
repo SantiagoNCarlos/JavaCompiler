@@ -84,7 +84,7 @@ start:
 	MOV AL, c_9_us
 	MOV p_global,AL
 
-	MOV AL, p_global
+	MOV AL, c_9_us
 	ADD AL, c_4_us
 	MOV @aux5,AL
 	JC _SumOverflowError_

@@ -231,6 +231,8 @@ asignacion:
 
                                           asignNode.setPropagated(true);
                                           asignNode.setBlockOfPropagation(basicBlockCounter);
+                                          asignNode.setPropagatedValue(rightSyntaxNode.getName());
+                                          asignNode.setPropagatedValueType(rightSyntaxNode.getType());
                                       } else {
                                           entry.setActive(false);
                                           entry.setValue(null);
@@ -281,6 +283,8 @@ asignacion:
 
                               asignNode.setPropagated(true);
                               asignNode.setBlockOfPropagation(basicBlockCounter);
+                              asignNode.setPropagatedValue(rightSyntaxNode.getName());
+                              asignNode.setPropagatedValueType(rightSyntaxNode.getType());
                             } else {
                               memberAttr.setActive(false);
                               memberAttr.setValue(null);
@@ -1294,44 +1298,36 @@ public static Map<String, ArrayList<String>> propagatedConstantsValuesMap = new 
 private void checkSubtreeConstantPropagations(SyntaxNode node) {
     if (node != null) {
         if (node.isPropagated()) {
-            if (node.getName().equals("=")) {
+            if (node.getName().equals("=")) { // Asign node! We add this constant
               final String variableName = node.getLeftChild().getName().equalsIgnoreCase("acceso") ?
                       node.getLeftChild().getLeftChild().getName() :
                       node.getLeftChild().getName();
 
-
               node.setBlockOfPropagation(basicBlockCounter);
-
 
               ArrayList<String> valuesList = propagatedConstantsValuesMap.get(variableName);
               if (valuesList == null) {
                 valuesList = new ArrayList<>();
               }
               valuesList.add(node.getPropagatedValue());
-
-
-    //          if (propagatedConstantsDefinitionsMap.containsKey(variableName)) {
-    //            SyntaxNode assignNode = propagatedConstantsDefinitionsMap.get(variableName);
-    //
-    //            if (assignNode.getPropagatedValue().equals(node.getPropagatedValue())) {
-    //              assignNode.setBlockOfPropagation(basicBlockCounter); // Update the assign value to ensure its on the correct basic block!
-    //            }
-    //          }
+              propagatedConstantsValuesMap.put(variableName, valuesList);
             } else {
                 final String variableName = node.getName().equalsIgnoreCase("acceso") ?
                       node.getLeftChild().getName() :
                       node.getName();
                 ArrayList<String> valuesList = propagatedConstantsValuesMap.get(variableName);
                 if (valuesList != null && valuesList.contains(node.getPropagatedValue())) {
-                  // TO-DO: PROPAGATION IS CORRECT!
+
+                  // Propagation is correct. We morph node into a constant node.
+                  node.setName(node.getPropagatedValue());
+                  node.setType(node.getPropagatedValueType());
+                  node.setRightChild(null);
+                  node.setLeftChild(null);
                 } else {
                   // TO-DO: PROPAGATION IS INCORRECT!
                 }
             }
         }
-
-
-        System.out.println(propagatedConstantsValuesMap);
 
         checkSubtreeConstantPropagations(node.getLeftChild());
         checkSubtreeConstantPropagations(node.getRightChild());
