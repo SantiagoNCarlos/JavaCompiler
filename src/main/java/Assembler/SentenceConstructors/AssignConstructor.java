@@ -16,6 +16,9 @@ public class AssignConstructor implements CodeConstructor{
 	}
 
 	private static String createDirective(SyntaxNode node, final String leftNodeToken, final String rightNodeToken) {
+
+		if (node.isPropagated()) return "";
+
 		final String varType = node.getType();
 		final String rightNodeType = node.getRightChild().getType();
 

@@ -18,7 +18,7 @@ public class MulConstructor implements CodeConstructor {
 	}
 
     private static String createDirective(SyntaxNode node, final String leftNodeToken, final String rightNodeToken) {
-        String returnCode = null;
+        String returnCode = "";
 
         final String auxVariableName = "@aux" + CodeGenerator.auxVariableCounter;
         CodeGenerator.auxVariableCounter++;

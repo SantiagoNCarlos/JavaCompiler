@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import AnalizadorLexico.Attribute;
 import AnalizadorLexico.SymbolTable;
+import java.util.Objects;
 
 /** Clase Nodo del �rbol que conserva el nombre, el tipo y si es una hoja */
 public class SyntaxNode {
@@ -145,5 +146,17 @@ public class SyntaxNode {
 
     public void setPropagatedValueType(String propagatedValueType) {
         this.propagatedValueType = propagatedValueType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SyntaxNode comparisonNode = (SyntaxNode) o;
+
+        return Objects.equals(name, comparisonNode.name) &&
+                Objects.equals(type, comparisonNode.type) &&
+                Objects.equals(leftChild, comparisonNode.leftChild) &&
+                Objects.equals(rightChild, comparisonNode.rightChild);
     }
 }

@@ -24,7 +24,6 @@ printf PROTO C :PTR BYTE, :VARARG
 	RecursionErrorMsg DB "Recursive call detected", 10, 0
 
 	c_3_l DD 3
-	@aux5 DB ?
 	@aux4 DB ?
 	b_global_clase_obj_global DB ?
 	s__LLEGUE_ DB " LLEGUE ", 10, 0
@@ -34,7 +33,6 @@ printf PROTO C :PTR BYTE, :VARARG
 	c_3_us DB 3
 	c_2_us DB 2
 	a_global DD ?
-	c_1_us DB 1
 	p_global DB ?
 	c_global DB ?
 	@aux3 DB ?
@@ -45,9 +43,6 @@ printf PROTO C :PTR BYTE, :VARARG
 
 .code
 start:
-
-	MOV AL, c_2_us
-	MOV b_global_clase_obj_global,AL
 
 	MOV AL, b_global_clase_obj_global
 	ADD AL, c_3_us
@@ -63,11 +58,8 @@ start:
 	MOV EAX, @aux2
 	MOV a_global,EAX
 
-	MOV AL, c_global
-	DIV c_1_us
-	MOV @aux3,AL
-	MOV AL, @aux3
-	MOV b_global_clase_obj_global,AL
+	MOV AL, c_2_us
+	MOV obj_global_clase_obj_global,AL
 
 	label1:
 	MOV AL, b_global_clase_obj_global
@@ -77,19 +69,16 @@ start:
 
 	MOV AL, b_global_clase_obj_global
 	MUL c_2_us
-	MOV @aux4,AL
-	MOV AL, @aux4
+	MOV @aux3,AL
+	MOV AL, @aux3
 	MOV b_global_clase_obj_global,AL
 
 	MOV AL, c_9_us
-	MOV p_global,AL
-
-	MOV AL, c_9_us
 	ADD AL, c_4_us
-	MOV @aux5,AL
+	MOV @aux4,AL
 	JC _SumOverflowError_
 
-	MOV AL, @aux5
+	MOV AL, @aux4
 	MOV p_global,AL
 
 	invoke printf, cfm$("%hu\n"), b_global_clase_obj_global

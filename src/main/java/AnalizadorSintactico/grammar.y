@@ -47,15 +47,11 @@ bloque:
                 if ((SyntaxNode) $2.obj != null) {
                     $$ = new ParserVal(new SyntaxNode("Bloque de sentencias", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
 
-                }
+                    propagatedConstantsValuesMap.clear();
+                    assignSentencesNodesList.clear();
 
-                /*
-                if ($1.obj != null) {
-                    final String leftNodeName = ((SyntaxNode) $1.obj ).getName();
-                    if (leftNodeName != "Bloque de sentencias") {
-                        basicBlockCounter++;
-                    }
-                } */
+                    checkSubtreeConstantPropagations((SyntaxNode) $2.obj);
+                }
             }
       		| definicion_class {
       		    $$ = $1;
@@ -69,11 +65,19 @@ bloque:
             }
             | bloque bloque_cambio_bloque_basico {
                 if ($2.obj != null) {
-                    $$ = new ParserVal(new SyntaxNode("Bloque de sentencias - Cambio de bloque", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
                     basicBlockCounter++;
 
                     propagatedConstantsValuesMap.clear();
+                    assignSentencesNodesList.clear();
+
                     checkSubtreeConstantPropagations((SyntaxNode) $2.obj);
+
+                    SyntaxNode assignNodes = createAssignSubtree();
+                    SyntaxNode completeNode = (assignNodes == null) ?
+                            (SyntaxNode) $2.obj :
+                            new SyntaxNode("Bloque de sentencias con asignaciones", assignNodes, (SyntaxNode) $2.obj);
+
+                    yyval = new ParserVal(new SyntaxNode("Bloque de sentencias - Cambio de bloque", (SyntaxNode) $1.obj, completeNode));
                 }
             }
       		;
@@ -1294,6 +1298,7 @@ public static String currentClass = "";
 public static int basicBlockCounter = 1;
 public static Map<String, SyntaxNode> propagatedConstantsDefinitionsMap = new HashMap<>();
 public static Map<String, ArrayList<String>> propagatedConstantsValuesMap = new HashMap<>();
+public static ArrayList<SyntaxNode> assignSentencesNodesList = new ArrayList<>();
 
 private void checkSubtreeConstantPropagations(SyntaxNode node) {
     if (node != null) {
@@ -1306,9 +1311,11 @@ private void checkSubtreeConstantPropagations(SyntaxNode node) {
               node.setBlockOfPropagation(basicBlockCounter);
 
               ArrayList<String> valuesList = propagatedConstantsValuesMap.get(variableName);
+
               if (valuesList == null) {
                 valuesList = new ArrayList<>();
               }
+
               valuesList.add(node.getPropagatedValue());
               propagatedConstantsValuesMap.put(variableName, valuesList);
             } else {
@@ -1324,7 +1331,17 @@ private void checkSubtreeConstantPropagations(SyntaxNode node) {
                   node.setRightChild(null);
                   node.setLeftChild(null);
                 } else {
-                  // TO-DO: PROPAGATION IS INCORRECT!
+                  // Propagation was made with a value from another basic block
+                  // Add an assign node to the list, to ensure the variables enter the new basic block with correct values
+                  node.setPropagated(false);
+
+                  SyntaxNode variableNode = new SyntaxNode(node.getName(), node.getLeftChild(), node.getLeftChild(), node.getType());
+                  SyntaxNode assignSentence = new SyntaxNode("=", variableNode, new SyntaxNode(node.getPropagatedValue(), node.getPropagatedValueType()) );
+                  assignSentence.setType(node.getType());
+                  assignSentence.setPropagated(false);
+
+                  if (!isDuplicate(assignSentence))
+                    assignSentencesNodesList.add(assignSentence);
                 }
             }
         }
@@ -1332,6 +1349,38 @@ private void checkSubtreeConstantPropagations(SyntaxNode node) {
         checkSubtreeConstantPropagations(node.getLeftChild());
         checkSubtreeConstantPropagations(node.getRightChild());
     }
+}
+
+private boolean isDuplicate(SyntaxNode newNode) {
+    for (SyntaxNode existingNode : assignSentencesNodesList) {
+      if (existingNode.equals(newNode)) {
+        return true;
+      }
+    }
+    return false;
+}
+
+private SyntaxNode createAssignSubtree() {
+  SyntaxNode responseNode = null;
+
+  if (!assignSentencesNodesList.isEmpty()) {
+    while (assignSentencesNodesList.size() > 1) {
+      ArrayList<SyntaxNode> newNodes = new ArrayList<>();
+      for (int i = 0; i < assignSentencesNodesList.size(); i += 2) {
+        if (i + 1 < assignSentencesNodesList.size()) {
+          newNodes.add(new SyntaxNode("Nodo Compuesto", assignSentencesNodesList.get(i), assignSentencesNodesList.get(i + 1)));
+        } else {
+          newNodes.add(assignSentencesNodesList.get(i));
+        }
+      }
+      assignSentencesNodesList = newNodes;
+    }
+
+    responseNode = assignSentencesNodesList.get(0);
+  }
+
+
+  return responseNode;
 }
 
 private boolean metodoExisteEnClase(String classType, String methodName) {
