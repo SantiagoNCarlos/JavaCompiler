@@ -31,8 +31,10 @@ n
 
 /************ PROGRAM - BLOCK - SENTENCES************/
 programa:
-            '{' bloque '}' { padre = new SyntaxNode("root", (SyntaxNode) $2.obj , null);
-            					verificarReglasCheck();}
+            '{' bloque '}' {
+                padre = new SyntaxNode("root", (SyntaxNode) $2.obj , null);
+            	verificarReglasCheck();
+            }
            	| '{' '}'
 			| '{' bloque {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un }.");}
 			| bloque '}' {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta un {.");}
@@ -44,21 +46,39 @@ bloque:
                 $$ = $1;
             }
             | bloque sentencia {
-                if ((SyntaxNode) $2.obj != null) {
-                    $$ = new ParserVal(new SyntaxNode("Bloque de sentencias", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
+                if ($2.obj != null) {
+                    //basicBlockCounter++;
 
-                    propagatedConstantsValuesMap.clear();
-                    assignSentencesNodesList.clear();
+                    //propagatedConstantsValuesMap.clear();
+                    //assignSentencesNodesList.clear();
 
-                    checkSubtreeConstantPropagations((SyntaxNode) $2.obj);
+                    //checkSubtreeConstantPropagations((SyntaxNode) $2.obj);
+                    checkSubtreeConstantPropagations(new SyntaxNode("checking node", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
+
+                    SyntaxNode assignNodes = createAssignSubtree();
+                    SyntaxNode completeNode = (assignNodes == null) ?
+                            (SyntaxNode) $2.obj :
+                            new SyntaxNode("Bloque de sentencias con asignaciones", assignNodes, (SyntaxNode) $2.obj);
+
+                    yyval = new ParserVal(new SyntaxNode("Bloque de sentencias", (SyntaxNode) $1.obj, completeNode));
                 }
             }
       		| definicion_class {
       		    $$ = $1;
             }
       		| bloque definicion_class {
-      		    if ($2.obj != null)
-                    $$ = new ParserVal(new SyntaxNode("Bloque de sentencias21", (SyntaxNode) $2.obj, (SyntaxNode) $1.obj));
+      		    if ($2.obj != null) {
+      		        propagatedConstantsValuesMap.clear();
+                    assignSentencesNodesList.clear();
+                    checkSubtreeConstantPropagations((SyntaxNode) $1.obj);
+
+                    SyntaxNode assignNodes = createAssignSubtree();
+                    SyntaxNode completeNode = (assignNodes == null) ?
+                            (SyntaxNode) $1.obj :
+                            new SyntaxNode("Bloque de sentencias con asignaciones 2", assignNodes, (SyntaxNode) $1.obj);
+
+                    $$ = new ParserVal(new SyntaxNode("Bloque de sentencias21", (SyntaxNode) $2.obj, completeNode));
+                }
             }
             | bloque_cambio_bloque_basico {
                 $$ = $1;
@@ -77,7 +97,21 @@ bloque:
                             (SyntaxNode) $2.obj :
                             new SyntaxNode("Bloque de sentencias con asignaciones", assignNodes, (SyntaxNode) $2.obj);
 
-                    yyval = new ParserVal(new SyntaxNode("Bloque de sentencias - Cambio de bloque", (SyntaxNode) $1.obj, completeNode));
+
+
+                    propagatedConstantsValuesMap.clear();
+                    assignSentencesNodesList.clear();
+                    checkSubtreeConstantPropagations((SyntaxNode) $1.obj);
+
+                    SyntaxNode assignNodesLeftBlock = createAssignSubtree();
+                    SyntaxNode completeLeftNode = (assignNodes == null) ?
+                            (SyntaxNode) $1.obj :
+                            new SyntaxNode("Bloque de sentencias con asignaciones 2", assignNodesLeftBlock, (SyntaxNode) $1.obj);
+
+                    yyval = new ParserVal(new SyntaxNode("Bloque de sentencias - Cambio de bloque", completeLeftNode, completeNode));
+
+                    propagatedConstantsValuesMap.clear();
+                    assignSentencesNodesList.clear();
                 }
             }
       		;
@@ -1331,23 +1365,34 @@ private void checkSubtreeConstantPropagations(SyntaxNode node) {
                   node.setRightChild(null);
                   node.setLeftChild(null);
                 } else {
-                  // Propagation was made with a value from another basic block
-                  // Add an assign node to the list, to ensure the variables enter the new basic block with correct values
-                  node.setPropagated(false);
+                  if (!node.getName().equalsIgnoreCase(node.getPropagatedValue())) {
+                    // Propagation was made with a value from another basic block
+                    // Add an assign node to the list, to ensure the variables enter the new basic block with correct values
+                    node.setPropagated(false);
 
-                  SyntaxNode variableNode = new SyntaxNode(node.getName(), node.getLeftChild(), node.getLeftChild(), node.getType());
-                  SyntaxNode assignSentence = new SyntaxNode("=", variableNode, new SyntaxNode(node.getPropagatedValue(), node.getPropagatedValueType()) );
-                  assignSentence.setType(node.getType());
-                  assignSentence.setPropagated(false);
+                    SyntaxNode variableNode = new SyntaxNode(node.getName(), node.getLeftChild(), node.getRightChild(), node.getType());
+                    SyntaxNode assignSentence = new SyntaxNode("=", variableNode, new SyntaxNode(node.getPropagatedValue(), node.getPropagatedValueType()) );
+                    assignSentence.setType(node.getType());
+                    assignSentence.setPropagated(false);
 
-                  if (!isDuplicate(assignSentence))
-                    assignSentencesNodesList.add(assignSentence);
+                    if (!isDuplicate(assignSentence))
+                      assignSentencesNodesList.add(assignSentence);
+                  }
                 }
             }
         }
 
-        checkSubtreeConstantPropagations(node.getLeftChild());
-        checkSubtreeConstantPropagations(node.getRightChild());
+        if (node.getLeftChild() != null &&
+            !node.getLeftChild().getName().equalsIgnoreCase("if") &&
+            !node.getLeftChild().getName().equalsIgnoreCase("while")) {
+          checkSubtreeConstantPropagations(node.getLeftChild());
+        }
+
+        if (node.getRightChild() != null &&
+            !node.getRightChild().getName().equalsIgnoreCase("if") &&
+            !node.getRightChild().getName().equalsIgnoreCase("while")) {
+          checkSubtreeConstantPropagations(node.getRightChild());
+        }
     }
 }
 

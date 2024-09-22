@@ -18,22 +18,36 @@
     obj.b = 2_us,
 
     USHORT c,
-
     c = obj.b + 3_us,
 
     LONG a,
     a = 3_l * obj.b,
 
+    USHORT p,
+
     WHILE (obj.b <= 8_us) DO {
         obj.b = obj.b * 2_us,
 
-        USHORT p,
         p = 9_us,
         p = p + 4_us,
 
         PRINT obj.b,
         obj.func(),
     },
+
+    USHORT d,
+    d = 3_us,
+
+    c = d * obj.b,
+
+    IF (obj.b < 5_us) {
+        obj.b = 6_us,
+    } END_IF,
+
+    d = d / c,
+    LONG e,
+    e = 7_us,
+    d = e,
 }
 
 *{

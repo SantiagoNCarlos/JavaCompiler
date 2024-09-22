@@ -23,28 +23,35 @@ printf PROTO C :PTR BYTE, :VARARG
 	ProductOverflowErrorMsg DB "Overflow detected in a FLOAT PRODUCT operation", 10, 0
 	RecursionErrorMsg DB "Recursive call detected", 10, 0
 
-	c_3_l DD 3
+	@aux6 DB ?
+	@aux5 DB ?
 	@aux4 DB ?
 	b_global_clase_obj_global DB ?
 	s__LLEGUE_ DB " LLEGUE ", 10, 0
 	b_global_clase DB ?
 	s__NO_LLEGUE_ DB " NO LLEGUE ", 10, 0
 	c_4_us DB 4
-	c_3_us DB 3
 	c_2_us DB 2
+	@aux3 DB ?
+	@aux2 DD ?
+	c_6_us DB 6
+	@aux1 DB ?
+	c_8_us DB 8
+	c_3_l DD 3
+	c_5_us DB 5
+	e_global DD ?
+	c_3_us DB 3
 	a_global DD ?
 	p_global DB ?
 	c_global DB ?
-	@aux3 DB ?
-	@aux2 DD ?
-	@aux1 DB ?
-	c_8_us DB 8
+	c_7_us DB 7
+	d_global DB ?
 	c_9_us DB 9
 
 .code
 start:
 
-	MOV AL, b_global_clase_obj_global
+	MOV AL, c_2_us
 	ADD AL, c_3_us
 	MOV @aux1,AL
 	JC _SumOverflowError_
@@ -53,13 +60,13 @@ start:
 	MOV c_global,AL
 
 	MOV EAX, c_3_l
-	MUL b_global_clase_obj_global
+	MUL c_2_us
 	MOV @aux2,EAX
 	MOV EAX, @aux2
 	MOV a_global,EAX
 
 	MOV AL, c_2_us
-	MOV obj_global_clase_obj_global,AL
+	MOV b_global_clase_obj_global,AL
 
 	label1:
 	MOV AL, b_global_clase_obj_global
@@ -99,22 +106,44 @@ start:
 	JMP label1
 	label2:
 
+	MOV AL, c_3_us
+	MUL b_global_clase_obj_global
+	MOV @aux5,AL
+	MOV AL, @aux5
+	MOV c_global,AL
+
+	MOV AL, b_global_clase_obj_global
+	MOV BL, c_5_us
+	CMP AL, BL
+	JAE label3
+
+	label3:
+
+	MOV AL, d_global
+	DIV c_global
+	MOV @aux6,AL
+	MOV AL, @aux6
+	MOV d_global,AL
+
+	MOV AL, c_7_us
+	MOV d_global,AL
+
 	JMP _end_
 
 FUNCTION_func_global_clase PROC
 	MOV AL, b_global_clase
 	MOV BL, c_8_us
 	CMP AL, BL
-	JNE label3
+	JNE label4
 
 	invoke StdOut, addr s__LLEGUE_
 
-	JMP label4
-	label3:
+	JMP label5
+	label4:
 
 	invoke StdOut, addr s__NO_LLEGUE_
 
-	label4:
+	label5:
 
 	MOV _current_function_, 0
 	RET 

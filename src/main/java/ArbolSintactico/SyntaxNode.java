@@ -3,6 +3,7 @@ package ArbolSintactico;
 import java.util.Optional;
 
 import AnalizadorLexico.Attribute;
+import AnalizadorLexico.Enums.UsesType;
 import AnalizadorLexico.SymbolTable;
 import java.util.Objects;
 
@@ -145,7 +146,18 @@ public class SyntaxNode {
     }
 
     public void setPropagatedValueType(String propagatedValueType) {
-        this.propagatedValueType = propagatedValueType;
+        if (propagatedValue != null && !propagatedValue.isEmpty()) {
+            if (propagatedValue.contains("_us")) {
+                this.propagatedValueType = UsesType.USHORT;
+                return;
+            }
+            if (propagatedValue.contains("_l")) {
+                this.propagatedValueType = UsesType.LONG;
+                return;
+            }
+            this.propagatedValueType = UsesType.FLOAT;
+        } else
+            this.propagatedValueType = propagatedValueType;
     }
 
     @Override

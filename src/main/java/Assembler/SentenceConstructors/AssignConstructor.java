@@ -19,8 +19,22 @@ public class AssignConstructor implements CodeConstructor{
 
 		if (node.isPropagated()) return "";
 
-		final String varType = node.getType();
-		final String rightNodeType = node.getRightChild().getType();
+		String varType = node.getType();
+		String rightNodeType = node.getRightChild().getType();
+
+		if (node.getRightChild().isLeaf()) {
+			if (rightNodeToken.contains("_us")) {
+				rightNodeType = UsesType.USHORT;
+			} else if (rightNodeToken.contains("_l")) {
+				rightNodeType = UsesType.LONG;
+			} else {
+				rightNodeType = UsesType.FLOAT;
+			}
+		}
+
+		if (node.getLeftChild().isLeaf()) {
+			varType = node.getLeftChild().getType();
+		}
 
 		node.setLeftChild(null);
 		node.setRightChild(null);
