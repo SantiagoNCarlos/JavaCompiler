@@ -262,11 +262,6 @@ asignacion:
                                           entry.setValue(rightSyntaxNode.getName());
                                           entry.setConstantValueBlock(basicBlockCounter);
 
-                                          final String objectName = leftSyntaxNode.getName(); // Store propagated asignation constant!
-
-                                          propagatedConstantsDefinitionsMap.remove(objectName); // Remove previous constant node if exists
-                                          propagatedConstantsDefinitionsMap.put(objectName, asignNode);
-
                                           asignNode.setPropagated(true);
                                           asignNode.setBlockOfPropagation(basicBlockCounter);
                                           asignNode.setPropagatedValue(rightSyntaxNode.getName());
@@ -313,11 +308,6 @@ asignacion:
                               memberAttr.setActive(true);
                               memberAttr.setValue(rightSyntaxNode.getName());
                               memberAttr.setConstantValueBlock(basicBlockCounter);
-
-                              final String objectName = accessNode.getLeftChild().getName(); // Store propagated asignation constant!
-
-                              propagatedConstantsDefinitionsMap.remove(objectName); // Remove previous constant node if exists
-                              propagatedConstantsDefinitionsMap.put(objectName, asignNode);
 
                               asignNode.setPropagated(true);
                               asignNode.setBlockOfPropagation(basicBlockCounter);
@@ -444,6 +434,10 @@ termino:
                                             Attribute entry = entrada.get();
                                             entry.setUsadaDerecho(true);
 
+                                            var x = new SyntaxNode("*", (SyntaxNode) $1.obj, factorNode);
+                                            x.setType(tipo_validado);
+                                            $$ = new ParserVal(x);
+
                                             if (entry.isActive() && entry.getConstantValueBlock() == basicBlockCounter) {
                                                 final String value = entry.getValue();
 
@@ -451,22 +445,17 @@ termino:
                                                 factorNode.setBlockOfPropagation(basicBlockCounter);
                                                 factorNode.setPropagatedValue(value);
                                                 factorNode.setPropagatedValueType(entry.getType());
-
-                                                var x = new SyntaxNode("*", (SyntaxNode) $1.obj, factorNode);
-
-                                                //var x = new SyntaxNode("*", (SyntaxNode) $1.obj, new SyntaxNode(value, entry.getType()));
-                                                x.setType(tipo_validado);
-                                                $$ = new ParserVal(x);
-                                            } else {
-                                                var x = new SyntaxNode("*", (SyntaxNode) $1.obj, (SyntaxNode)  $3.obj);
-                                                x.setType(tipo_validado);
-                                                $$ = new ParserVal(x);
                                             }
                                         }
                                     }
                                 } else {
                                     if (factorNode.getName().equalsIgnoreCase("acceso")) {
                                         Attribute memberAttr = getMemberVarAttribute(factorNode);
+
+                                        var x = new SyntaxNode("*", (SyntaxNode) $1.obj, factorNode);
+                                        x.setType(tipo_validado);
+                                        $$ = new ParserVal(x);
+
                                         if (memberAttr != null && memberAttr.isActive() && memberAttr.getConstantValueBlock() == basicBlockCounter) {
                                             final String value = memberAttr.getValue();
 
@@ -474,16 +463,6 @@ termino:
                                             factorNode.setBlockOfPropagation(basicBlockCounter);
                                             factorNode.setPropagatedValue(value);
                                             factorNode.setPropagatedValueType(memberAttr.getType());
-
-                                            //var x = new SyntaxNode("*", (SyntaxNode) $1.obj, new SyntaxNode(value, memberAttr.getType()));
-                                            var x = new SyntaxNode("*", (SyntaxNode) $1.obj, factorNode);
-
-                                            x.setType(tipo_validado);
-                                            $$ = new ParserVal(x);
-                                        } else {
-                                            var x = new SyntaxNode("*", (SyntaxNode) $1.obj, (SyntaxNode)  $3.obj);
-                                            x.setType(tipo_validado);
-                                            $$ = new ParserVal(x);
                                         }
                                     }
                                 }
@@ -1330,7 +1309,6 @@ public static Map<String, String> classFullNames = new HashMap<>();
 public static Map<String, ArrayList<String>> compositionMap = new HashMap<>();
 public static String currentClass = "";
 public static int basicBlockCounter = 1;
-public static Map<String, SyntaxNode> propagatedConstantsDefinitionsMap = new HashMap<>();
 public static Map<String, ArrayList<String>> propagatedConstantsValuesMap = new HashMap<>();
 public static ArrayList<SyntaxNode> assignSentencesNodesList = new ArrayList<>();
 

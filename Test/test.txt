@@ -1,4 +1,5 @@
 {
+
     CLASS clase {
         USHORT b,
         VOID func() {
@@ -14,11 +15,23 @@
     }
 
     clase obj,
-
     obj.b = 2_us,
 
-    USHORT c,
-    c = obj.b + 3_us,
+        USHORT c,
+        c = obj.b * 3_us,
+
+
+}
+
+*{
+
+
+    WHILE (obj.b <= 8_us) DO {
+        obj.b = obj.b * 2_us,
+        PRINT obj.b,
+        obj.func(),
+    },
+
 
     LONG a,
     a = 3_l * obj.b,
@@ -48,11 +61,6 @@
     LONG e,
     e = 7_us,
     d = e,
-}
-
-*{
-
-
 
 
 }*
