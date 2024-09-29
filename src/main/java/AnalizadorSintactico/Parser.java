@@ -694,7 +694,7 @@ final static String yyrule[] = {
 "sentencias_concatenacion_void : sentencia_void",
 "sentencias_void : asignacion",
 "sentencias_void : bloque_if_void",
-"sentencias_void : bloque_while_void",
+"sentencias_void : bloque_checkSubtreeConstantPropagationsvoid",
 "sentencias_void : impresion",
 "sentencias_void : expresion",
 "sentencias_void : declaracion",

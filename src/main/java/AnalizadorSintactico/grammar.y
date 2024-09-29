@@ -47,12 +47,6 @@ bloque:
             }
             | bloque sentencia {
                 if ($2.obj != null) {
-                    //basicBlockCounter++;
-
-                    //propagatedConstantsValuesMap.clear();
-                    //assignSentencesNodesList.clear();
-
-                    //checkSubtreeConstantPropagations((SyntaxNode) $2.obj);
                     checkSubtreeConstantPropagations(new SyntaxNode("checking node", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
 
                     SyntaxNode assignNodes = createAssignSubtree();

@@ -14,17 +14,26 @@
         },
     }
 
-    clase obj,
-    obj.b = 2_us,
+    USHORT a;b;c,
 
-        USHORT c,
-        c = obj.b * 3_us,
+    a = 1_us,
+    b = a * 2_us,
+    c = 0_us,
+
+    WHILE (c <= 8_us) DO {
+        b = b + 5_us - a,
+        c++,
+    },
+
+    b = 1_us,
+    b = b + a,
 
 
 }
 
 *{
-
+    clase obj,
+    obj.b = 2_us,
 
     WHILE (obj.b <= 8_us) DO {
         obj.b = obj.b * 2_us,
