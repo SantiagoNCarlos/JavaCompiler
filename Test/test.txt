@@ -1,19 +1,4 @@
 {
-
-    CLASS clase {
-        USHORT b,
-        VOID func() {
-          IF (b == 8_us) {
-              PRINT # LLEGUE #,
-          } ELSE {
-              PRINT # NO LLEGUE #,
-          }
-          END_IF,
-
-          RETURN,
-        },
-    }
-
     USHORT a;b;c,
 
     a = 1_us,
@@ -28,10 +13,30 @@
     b = 1_us,
     b = b + a,
 
+    IF (b == 2_us) {
+        PRINT # VALOR CORRECTO #,
+    } END_IF,
+
 
 }
 
 *{
+
+
+        CLASS clase {
+            USHORT b,
+            VOID func() {
+              IF (b == 8_us) {
+                  PRINT # LLEGUE #,
+              } ELSE {
+                  PRINT # NO LLEGUE #,
+              }
+              END_IF,
+
+              RETURN,
+            },
+        }
+
     clase obj,
     obj.b = 2_us,
 

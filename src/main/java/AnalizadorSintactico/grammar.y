@@ -47,14 +47,17 @@ bloque:
             }
             | bloque sentencia {
                 if ($2.obj != null) {
-                    checkSubtreeConstantPropagations(new SyntaxNode("checking node", (SyntaxNode) $1.obj, (SyntaxNode) $2.obj));
+                    SyntaxNode blockNode = (SyntaxNode) $1.obj;
+                    SyntaxNode sentencesNode = (SyntaxNode) $2.obj;
+
+                    checkSubtreeConstantPropagations(new SyntaxNode("checking node", blockNode, sentencesNode));
 
                     SyntaxNode assignNodes = createAssignSubtree();
                     SyntaxNode completeNode = (assignNodes == null) ?
-                            (SyntaxNode) $2.obj :
-                            new SyntaxNode("Bloque de sentencias con asignaciones", assignNodes, (SyntaxNode) $2.obj);
+                            sentencesNode :
+                            new SyntaxNode("Bloque de sentencias con asignaciones", assignNodes, sentencesNode);
 
-                    yyval = new ParserVal(new SyntaxNode("Bloque de sentencias", (SyntaxNode) $1.obj, completeNode));
+                    $$ = new ParserVal(new SyntaxNode("Bloque de sentencias", blockNode, completeNode));
                 }
             }
       		| definicion_class {
