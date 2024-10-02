@@ -26,10 +26,12 @@ public class DivConstructor implements CodeConstructor {
         switch (node.getType()) {
             case UsesType.USHORT ->
                         returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
+                        "\tMOV AH, 0\n" + // Extends AL to AX (needed to perform byte division)
                         "\tDIV " + rightNodeToken + "\n" +
                         "\tMOV " + auxVariableName + ",AL"; // Store the 8 bit USHORT mul in aux variable.
             case UsesType.LONG ->
-                        returnCode = "\tMOV EAX, " + leftNodeToken + "\n" +
+                        returnCode = "\tXOR EDX, EDX\n" + // Clean EDX (needed to perform 32 bit division)
+                        "\tMOV EAX, " + leftNodeToken + "\n" +
                         "\tDIV " + rightNodeToken + "\n" +
                         "\tMOV " + auxVariableName + ",EAX"; // Store the 32 bit LONG mul in aux variable.
             case UsesType.FLOAT ->

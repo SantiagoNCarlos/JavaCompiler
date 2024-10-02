@@ -1,23 +1,22 @@
-.386
-.model flat, stdcall
-option casemap:none
+;.386
+;.model flat, stdcall
+;option casemap:none
 
 
-include \masm32\include\windows.inc
-include \masm32\include\kernel32.inc
-include \masm32\include\masm32.inc
+include \masm32\include\masm32rt.inc
 
 includelib \masm32\lib\kernel32.lib
 includelib \masm32\lib\masm32.lib
 includelib \masm32\lib\msvcrt.lib
+includelib \masm32\lib\user32.lib
+
+dll_dllcrt0 PROTO C
 printf PROTO C :PTR BYTE, :VARARG
 
 .stack 200h
 .data
 
-	formatStringLong db "%d", 0
-	formatStringUShort db "%hu", 0
-	formatStringFloat db "%f", 0
+	_float_aux_print_ DQ 0
 	_current_function_ DD 0
 	_max_float_value_ DD 3.40282347e+38
 	SumOverflowErrorMsg DB "Overflow detected in a INTEGER SUM operation", 10, 0
@@ -36,23 +35,21 @@ printf PROTO C :PTR BYTE, :VARARG
 	@aux2 DD ?
 	b_global DD ?
 	d_global DD ?
+	c_1_l DD 1
 	@aux1 DD ?
 	c_2_l DD 2
-	c_-21_0 DD -21.0
+	c__21_0 DD -21.0
 
 .code
 start:
 
-	MOV EAX, c_3_l
-	MOV a_global,EAX
-
-	MOV EAX, c_8_l
-	MOV b_global,EAX
-
 	MOV EAX, b_global
-	ADD EAX, 1_l
+	ADD EAX, c_1_l
 	MOV @aux1,EAX
-	JO ErrorOverflow
+	JO _SumOverflowError_
+
+	MOV EAX, @aux1
+	MOV b_global,EAX
 
 	MOV EAX, c_3_l
 	SUB EAX, c_8_l
@@ -61,22 +58,22 @@ start:
 	MOV a_global,EAX
 
 	MOV EAX, a_global
-	DIV EAX, c_2_l
+	DIV c_2_l
 	MOV @aux3,EAX
 	MOV EAX, @aux3
 	MOV a_global,EAX
 
 	MOV EAX, c_6_l
-	MUL EAX, c_8_l
+	MUL c_8_l
 	MOV @aux4,EAX
 	MOV EAX, @aux4
 	MOV b_global,EAX
 
-	FLD c_-21_0
-	FSTP c_global
+	invoke printf, cfm$("%d\n"), a_global
 
-	FLD c_3_77E6
-	FSTP d_global
+	invoke printf, cfm$("%d\n"), b_global
+
+	JMP _end_
 
 	JMP _end_
 	_SumOverflowError_:
@@ -89,4 +86,5 @@ start:
 	invoke StdOut, addr RecursionErrorMsg
 	JMP _end_
 	_end_:
+	invoke ExitProcess, 0
 END start

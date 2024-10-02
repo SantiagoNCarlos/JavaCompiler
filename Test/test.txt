@@ -1,23 +1,28 @@
 {
-    USHORT a;b;c,
+	*{ Test para comprobar operaciones aritmeticas. }*
 
-    a = 1_us,
-    b = a * 2_us,
-    c = 0_us,
+    USHORT a,
+	LONG  b,
+	FLOAT c,
+	FLOAT d,
 
-    WHILE (c <= 8_us) DO {
-        b = b + 5_us - a,
-        c++,
-    },
-
-    b = 1_us,
-    b = b + a,
-
-    IF (b == 2_us) {
-        PRINT # VALOR CORRECTO #,
-    } END_IF,
+	a= 3_us + 1_us,
+	b= 8_l,
 
 
+    a = 3_us / 2_us,
+
+	c = b,
+
+	b = 6_us + 2_l,
+
+
+
+
+    PRINT a,
+	PRINT b,
+    PRINT c,
+    PRINT d,
 }
 
 *{

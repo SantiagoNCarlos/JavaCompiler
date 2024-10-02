@@ -773,10 +773,6 @@ private void checkSubtreeConstantPropagations(SyntaxNode node) {
                       node.getLeftChild().getLeftChild().getName() :
                       node.getLeftChild().getName();
 
-              if (variableName.contains("d")) {
-                System.out.println(node);
-              }
-
               node.setBlockOfPropagation(basicBlockCounter);
 
               ArrayList<String> valuesList = propagatedConstantsValuesMap.get(variableName);
@@ -984,7 +980,10 @@ private String validarTipos(SyntaxNode obj, SyntaxNode obj1, boolean esAsignacio
     boolean esFlotanteObj = obj.getType().equals(UsesType.FLOAT);
     boolean esFlotanteObj1 = obj1.getType().equals(UsesType.FLOAT);
     
-    if (esEnteroObj && esEnteroObj1) { 
+    if (esEnteroObj && esEnteroObj1) {
+        if (esAsignacion)
+          return obj.getType();
+
     	if (!obj.getType().equals(obj1.getType()))//determino que es op entre long y ushort
         	return UsesType.LONG;
         else
@@ -1844,6 +1843,7 @@ case 35:
                                           asignNode.setBlockOfPropagation(basicBlockCounter);
                                           asignNode.setPropagatedValue(rightSyntaxNode.getName());
                                           asignNode.setPropagatedValueType(rightSyntaxNode.getType());
+
                                       } else {
                                           entry.setActive(false);
                                           entry.setValue(null);

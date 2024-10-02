@@ -1,6 +1,7 @@
 package Assembler.SentenceConstructors;
 
 import AnalizadorLexico.Enums.UsesType;
+import AnalizadorSintactico.Parser;
 import ArbolSintactico.SyntaxNode;
 
 public class AssignConstructor implements CodeConstructor{
@@ -14,7 +15,7 @@ public class AssignConstructor implements CodeConstructor{
 
 		return createDirective(node, leftNodeToken, rightNodeToken);
 	}
-
+	/*
 	private static String createDirective(SyntaxNode node, final String leftNodeToken, final String rightNodeToken) {
 
 		if (node.isPropagated()) return "";
@@ -69,5 +70,106 @@ public class AssignConstructor implements CodeConstructor{
 			default -> directive = "";
 		};
 		return directive;
+	}*/
+	private static String createDirective(SyntaxNode node, final String leftNodeToken, final String rightNodeToken) {
+		if (node.isPropagated()) return "";
+
+		// Determine types
+		String varType = node.getType();
+		String rightNodeType = node.getRightChild().getType();
+
+		// Handle leaf nodes type determination
+		if (node.getRightChild().isLeaf() && !rightNodeToken.contains("aux")) {
+			rightNodeType = determineTypeFromToken(rightNodeToken);
+		}
+		if (node.getLeftChild().isLeaf() && !leftNodeToken.contains("aux")) {
+			varType = node.getLeftChild().getType();
+		}
+
+		// Type compatibility check
+		if (!areTypesCompatible(varType, rightNodeType)) {
+			Parser.yyerror("Incompatibilidad de tipos entre " + varType + " y " + rightNodeType);
+			return null;
+		}
+
+		// Clean up node
+		node.setLeftChild(null);
+		node.setRightChild(null);
+		node.setLeaf(true);
+
+		// Generate appropriate directive
+		return generateDirective(varType, rightNodeType, leftNodeToken, rightNodeToken);
 	}
+
+	private static String determineTypeFromToken(String token) {
+		if (token.contains("_us")) {
+			return UsesType.USHORT;
+		} else if (token.contains("_l")) {
+			return UsesType.LONG;
+		} else {
+			return UsesType.FLOAT;
+		}
+	}
+
+	private static boolean areTypesCompatible(String leftType, String rightType) {
+		// Define type compatibility rules
+		if (leftType.equals(rightType)) return true;
+
+		// USHORT can be assigned to LONG or FLOAT
+		if (rightType.equals(UsesType.USHORT) &&
+				(leftType.equals(UsesType.LONG) || leftType.equals(UsesType.FLOAT))) {
+			return true;
+		}
+
+		// LONG can be assigned to FLOAT
+		if (rightType.equals(UsesType.LONG) && leftType.equals(UsesType.FLOAT)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private static String generateDirective(String leftType, String rightType,
+											String leftToken, String rightToken) {
+		StringBuilder directive = new StringBuilder();
+
+		switch (leftType) {
+			case UsesType.USHORT -> {
+				if (!rightType.equals(UsesType.USHORT)) {
+					Parser.yyerror("USHORTS solo pueden tener valores USHORTS asignados.");
+				}
+				directive.append("\tMOV AL, ").append(rightToken).append("\n")
+						 .append("\tMOV ").append(leftToken).append(",AL\n");
+			}
+			case UsesType.LONG -> {
+				if (rightType.equals(UsesType.USHORT)) {
+					directive.append("\tMOVZX EAX, ").append(rightToken).append("\n")
+							.append("\tMOV ").append(leftToken).append(",EAX\n");
+				} else if (rightType.equals(UsesType.LONG)) {
+					directive.append("\tMOV EAX, ").append(rightToken).append("\n")
+							.append("\tMOV ").append(leftToken).append(",EAX\n");
+				}
+			}
+			case UsesType.FLOAT -> {
+				if (rightType.equals(UsesType.USHORT)) {
+					directive.append("\tMOVZX EAX, ").append(rightToken).append("\n")
+							.append("\tMOV DWORD PTR [esp-4], EAX\n")
+							.append("\tFLD DWORD PTR [esp-4]\n")
+							.append("\tFSTP ").append(leftToken).append("\n");
+				} else /*if (rightType.equals(UsesType.LONG)) {
+					directive.append("\tMOV EAX, ").append(rightToken).append("\n")
+							.append("\tMOV DWORD PTR [esp-4], EAX\n")
+							.append("\tFILD DWORD PTR [esp-4]\n")
+							.append("\tFSTP ").append(leftToken).append("\n");
+				} else */
+				{
+					directive.append("\tFLD ").append(rightToken).append("\n")
+							.append("\tFSTP ").append(leftToken).append("\n");
+				}
+			}
+		}
+
+		return directive.toString();
+	}
+
 }
