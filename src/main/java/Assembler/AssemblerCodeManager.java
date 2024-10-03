@@ -105,11 +105,9 @@ public class AssemblerCodeManager {
                 case UsesType.CONSTANT -> { // Use a 'c_' prefix for constants
                     if (type.equals(UsesType.FLOAT)) {
                         String tokenValue = (token.startsWith(".") ? "0" : "") + token; // For values like .1 ...
-//                        tokenValue =
                         directive = new StringBuilder("c_" + token.replace(".", "_").replace("+","_").replace("-","_") + " DD " + tokenValue);
                     } else {
                         final String constant_value = token.contains("_") ? token.substring(0, token.indexOf("_")) : "";
-
                         directive = new StringBuilder("c_" + token.replace(":", "_").replace("-","_") +
                                 (type.equals("USHORT") ? " DB " : " DD ") +
                                 constant_value);

@@ -17,37 +17,82 @@ public class DivConstructor implements CodeConstructor {
 		return createDirective(node, leftNodeToken, rightNodeToken);
 	}
 
-    private static String createDirective(SyntaxNode node, final String leftNodeToken, final String rightNodeToken) {
-        String returnCode = null;
+   private static String createDirective(SyntaxNode node, final String leftNodeToken, final String rightNodeToken) {
+       String returnCode = null;
+       final String auxVariableName = "@aux" + CodeGenerator.auxVariableCounter;
+       CodeGenerator.auxVariableCounter++;
 
-        final String auxVariableName = "@aux" + CodeGenerator.auxVariableCounter;
-        CodeGenerator.auxVariableCounter++;
+       String leftType = node.getLeftChild().getType();
+       String rightType = node.getRightChild().getType();
 
-        switch (node.getType()) {
-            case UsesType.USHORT ->
-                        returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
-                        "\tMOV AH, 0\n" + // Extends AL to AX (needed to perform byte division)
-                        "\tDIV " + rightNodeToken + "\n" +
-                        "\tMOV " + auxVariableName + ",AL"; // Store the 8 bit USHORT mul in aux variable.
-            case UsesType.LONG ->
-                        returnCode = "\tXOR EDX, EDX\n" + // Clean EDX (needed to perform 32 bit division)
-                        "\tMOV EAX, " + leftNodeToken + "\n" +
-                        "\tDIV " + rightNodeToken + "\n" +
-                        "\tMOV " + auxVariableName + ",EAX"; // Store the 32 bit LONG mul in aux variable.
-            case UsesType.FLOAT ->
-                        returnCode = "\tFLD " + leftNodeToken + "\n" + // Load left node to FPU stack
-                        "\tFLD " + rightNodeToken + "\n" + // Load right node to FPU stack
-                        "\tFDIV\n" + // Divide...
-                        "\tFSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
-        }
+       // Determine actual types if nodes are leaves (constants)
+       if (node.getLeftChild().isLeaf()) {
+           if (leftNodeToken.contains("_us")) {
+               leftType = UsesType.USHORT;
+           } else if (leftNodeToken.contains("_l")) {
+               leftType = UsesType.LONG;
+           }
+       }
+       if (node.getRightChild().isLeaf()) {
+           if (rightNodeToken.contains("_us")) {
+               rightType = UsesType.USHORT;
+           } else if (rightNodeToken.contains("_l")) {
+               rightType = UsesType.LONG;
+           }
+       }
 
-        SymbolTable.addSymbol(auxVariableName, TokenType.ID, node.getType(), UsesType.AUX_VAR);
+       switch (node.getType()) {
+           case UsesType.USHORT -> {
+               if (!rightType.equals(UsesType.USHORT)) {
+                   // Error: USHORT can only divide by USHORT
+                   throw new RuntimeException("Cannot divide USHORT by " + rightType);
+               }
+               returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
+                       "\tMOV AH, 0\n" +
+                       "\tDIV " + rightNodeToken + "\n" +
+                       "\tMOV " + auxVariableName + ", AL";
+           }
+           case UsesType.LONG -> {
+               StringBuilder code = new StringBuilder("\tXOR EDX, EDX\n");
 
-        node.setName(auxVariableName);
-        node.setLeftChild(null);
-        node.setRightChild(null);
-        node.setLeaf(true);
+               if (leftType.equals(UsesType.USHORT)) {
+                   code.append("\tMOVZX EAX, ").append(leftNodeToken).append("\n");
+               } else {
+                   code.append("\tMOV EAX, ").append(leftNodeToken).append("\n");
+               }
 
-        return returnCode;
-	}
+               if (rightType.equals(UsesType.USHORT)) {
+                   code.append("\tMOVZX ECX, ").append(rightNodeToken).append("\n")
+                           .append("\tDIV ECX\n");
+               } else {
+                   code.append("\tDIV ").append(rightNodeToken).append("\n");
+               }
+
+               code.append("\tMOV ").append(auxVariableName).append(", EAX");
+               returnCode = code.toString();
+           }
+           case UsesType.FLOAT -> {
+               StringBuilder code = new StringBuilder();
+
+               // Handle left operand
+               CodeConstructor.generateFloatLoadSentences(leftNodeToken, leftType, code);
+
+               // Handle right operand
+               CodeConstructor.generateFloatLoadSentences(rightNodeToken, rightType, code);
+
+               code.append("\tFDIV\n")
+                       .append("\tFSTP ").append(auxVariableName);
+
+               returnCode = code.toString();
+           }
+       }
+
+       SymbolTable.addSymbol(auxVariableName, TokenType.ID, node.getType(), UsesType.AUX_VAR);
+       node.setName(auxVariableName);
+       node.setLeftChild(null);
+       node.setRightChild(null);
+       node.setLeaf(true);
+
+       return returnCode;
+   }
 }

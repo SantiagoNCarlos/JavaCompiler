@@ -79,17 +79,11 @@ public class AssignConstructor implements CodeConstructor{
 		String rightNodeType = node.getRightChild().getType();
 
 		// Handle leaf nodes type determination
-		if (node.getRightChild().isLeaf() && !rightNodeToken.contains("aux")) {
+		if (node.getRightChild().isLeaf() && !rightNodeToken.contains("aux") && !node.getType().equals(UsesType.FLOAT)) {
 			rightNodeType = determineTypeFromToken(rightNodeToken);
 		}
 		if (node.getLeftChild().isLeaf() && !leftNodeToken.contains("aux")) {
 			varType = node.getLeftChild().getType();
-		}
-
-		// Type compatibility check
-		if (!areTypesCompatible(varType, rightNodeType)) {
-			Parser.yyerror("Incompatibilidad de tipos entre " + varType + " y " + rightNodeType);
-			return null;
 		}
 
 		// Clean up node
@@ -109,24 +103,6 @@ public class AssignConstructor implements CodeConstructor{
 		} else {
 			return UsesType.FLOAT;
 		}
-	}
-
-	private static boolean areTypesCompatible(String leftType, String rightType) {
-		// Define type compatibility rules
-		if (leftType.equals(rightType)) return true;
-
-		// USHORT can be assigned to LONG or FLOAT
-		if (rightType.equals(UsesType.USHORT) &&
-				(leftType.equals(UsesType.LONG) || leftType.equals(UsesType.FLOAT))) {
-			return true;
-		}
-
-		// LONG can be assigned to FLOAT
-		if (rightType.equals(UsesType.LONG) && leftType.equals(UsesType.FLOAT)) {
-			return true;
-		}
-
-		return false;
 	}
 
 	private static String generateDirective(String leftType, String rightType,
@@ -156,12 +132,12 @@ public class AssignConstructor implements CodeConstructor{
 							.append("\tMOV DWORD PTR [esp-4], EAX\n")
 							.append("\tFLD DWORD PTR [esp-4]\n")
 							.append("\tFSTP ").append(leftToken).append("\n");
-				} else /*if (rightType.equals(UsesType.LONG)) {
+				} else if (rightType.equals(UsesType.LONG)) {
 					directive.append("\tMOV EAX, ").append(rightToken).append("\n")
 							.append("\tMOV DWORD PTR [esp-4], EAX\n")
 							.append("\tFILD DWORD PTR [esp-4]\n")
 							.append("\tFSTP ").append(leftToken).append("\n");
-				} else */
+				} else
 				{
 					directive.append("\tFLD ").append(rightToken).append("\n")
 							.append("\tFSTP ").append(leftToken).append("\n");

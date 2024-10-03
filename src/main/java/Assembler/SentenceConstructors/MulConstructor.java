@@ -18,41 +18,83 @@ public class MulConstructor implements CodeConstructor {
 	}
 
     private static String createDirective(SyntaxNode node, final String leftNodeToken, final String rightNodeToken) {
-        String returnCode = "";
-
+        StringBuilder returnCode = new StringBuilder();
         final String auxVariableName = "@aux" + CodeGenerator.auxVariableCounter;
         CodeGenerator.auxVariableCounter++;
 
+        String leftType = node.getLeftChild().getType();
+        String rightType = node.getRightChild().getType();
+
+        // Determine actual types if nodes are leaves (constants)
+        if (node.getLeftChild().isLeaf()) {
+            if (leftNodeToken.contains("_us")) {
+                leftType = UsesType.USHORT;
+            } else if (leftNodeToken.contains("_l")) {
+                leftType = UsesType.LONG;
+            }
+        }
+        if (node.getRightChild().isLeaf()) {
+            if (rightNodeToken.contains("_us")) {
+                rightType = UsesType.USHORT;
+            } else if (rightNodeToken.contains("_l")) {
+                rightType = UsesType.LONG;
+            }
+        }
+
         switch (node.getType()) {
-            case UsesType.USHORT ->
-                returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
-                        "\tMUL " + rightNodeToken + "\n" +
-                        "\tMOV " + auxVariableName + ",AL"; // Store the 8 bit USHORT mul in aux variable.
-            case UsesType.LONG ->
-                returnCode = "\tMOV EAX, " + leftNodeToken + "\n" +
-                         "\tMUL " + rightNodeToken + "\n" +
-                         "\tMOV " + auxVariableName + ",EAX"; // Store the 32 bit LONG mul in aux variable.
-            case UsesType.FLOAT ->
-                returnCode = "\tFLD " + CodeConstructor.replaceTokenUnvalidChars(leftNodeToken) + "\n" + // Load left node to FPU stack
-                        "\tFLD " + CodeConstructor.replaceTokenUnvalidChars(rightNodeToken) + "\n" + // Load right node to FPU stack
-                        "\tFMUL \n" + // Multiply...
-                        "\tFLD ST(0)\n" + // Duplicate the result (ST(0) is now also in ST(1))
-                        "\tFABS \n" + // Take the absolute value of the result in ST(0)
-                        "\tFCOM _max_float_value_\n" + // Compare result with max float value (ST remains the same)
-                        "\tFSTSW AX\n" + // Store FPU status word in AX
-                        "\tSAHF\n" + // Transfer condition codes to CPU flags
-                        "\tJA _ProductOverflowError_\n" + // Jump if result > max_float_reg (overflow)
-                        "\tFXCH\n" + // Exchange ST(0) with ST(1). ST(1) has the original result!
-                        "\tFSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
+            case UsesType.USHORT -> {
+                if (!leftType.equals(UsesType.USHORT) || !rightType.equals(UsesType.USHORT)) {
+                    throw new RuntimeException("Cannot multiply non-USHORT values in USHORT context");
+                }
+                returnCode.append("\tMOV AL, ").append(leftNodeToken).append("\n")
+                        .append("\tMUL BYTE PTR ").append(rightNodeToken).append("\n")
+                        .append("\tMOV ").append(auxVariableName).append(", AL");
+            }
+            case UsesType.LONG -> {
+                // Handle left operand
+                if (leftType.equals(UsesType.USHORT)) {
+                    returnCode.append("\tMOVZX EAX, BYTE PTR ").append(leftNodeToken).append("\n");
+                } else {
+                    returnCode.append("\tMOV EAX, ").append(leftNodeToken).append("\n");
+                }
+
+                // Handle right operand
+                if (rightType.equals(UsesType.USHORT)) {
+                    returnCode.append("\tMOVZX ECX, BYTE PTR ").append(rightNodeToken).append("\n")
+                            .append("\tMUL ECX\n");
+                } else {
+                    returnCode.append("\tMUL ").append(rightNodeToken).append("\n");
+                }
+
+                returnCode.append("\tMOV ").append(auxVariableName).append(", EAX");
+            }
+            case UsesType.FLOAT -> {
+                // Handle left operand
+                CodeConstructor.generateFloatLoadSentences(leftNodeToken, leftType, returnCode);
+
+                // Handle right operand
+                CodeConstructor.generateFloatLoadSentences(rightNodeToken, rightType, returnCode);
+
+
+                // Multiply and check for overflow
+                returnCode.append("\tFMUL\n")
+                        .append("\tFLD ST(0)\n")
+                        .append("\tFABS\n")
+                        .append("\tFCOM _max_float_value_\n")
+                        .append("\tFSTSW AX\n")
+                        .append("\tSAHF\n")
+                        .append("\tJA _ProductOverflowError_\n")
+                        .append("\tFXCH\n")
+                        .append("\tFSTP ").append(auxVariableName);
+            }
         }
 
         SymbolTable.addSymbol(auxVariableName, TokenType.ID, node.getType(), UsesType.AUX_VAR);
-
         node.setName(auxVariableName);
         node.setLeftChild(null);
         node.setRightChild(null);
         node.setLeaf(true);
 
-        return returnCode;
-	}
+        return returnCode.toString();
+    }
 }

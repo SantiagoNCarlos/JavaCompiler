@@ -1,6 +1,7 @@
 package Assembler.SentenceConstructors;
 
 import AnalizadorLexico.Attribute;
+import AnalizadorLexico.Enums.UsesType;
 import ArbolSintactico.SyntaxNode;
 
 import java.util.Optional;
@@ -28,5 +29,25 @@ public interface CodeConstructor {
 		return token.replace(":", "_").replace("+","_")
 				.replace("-","_").replace("#","")
 				.replace(" ", "_").replace(".", "_");
+	}
+
+	static void generateFloatLoadSentences(String rightNodeToken, String rightType, StringBuilder code) {
+		if (rightType.equals(UsesType.USHORT)) {
+			generateFloatUshortLoad(rightNodeToken, code);
+		} else if (rightType.equals(UsesType.LONG)) {
+			generateFloatLongLoad(rightNodeToken, code);
+		} else {
+			code.append("\tFLD ").append(CodeConstructor.replaceTokenUnvalidChars(rightNodeToken)).append("\n");
+		}
+	}
+
+	static void generateFloatUshortLoad(String rightNodeToken, StringBuilder code) {
+		code.append("\tMOVZX EAX, BYTE PTR ").append(rightNodeToken).append("\n")
+				.append("\tMOV DWORD PTR [ESP-4], EAX\n")
+				.append("\tFILD DWORD PTR [ESP-4]\n");
+	}
+
+	static void generateFloatLongLoad(String rightNodeToken, StringBuilder code) {
+		code.append("\tFILD DWORD PTR ").append(rightNodeToken).append("\n");
 	}
 }

@@ -981,8 +981,10 @@ private String validarTipos(SyntaxNode obj, SyntaxNode obj1, boolean esAsignacio
     boolean esFlotanteObj1 = obj1.getType().equals(UsesType.FLOAT);
     
     if (esEnteroObj && esEnteroObj1) {
-        if (esAsignacion)
-          return obj.getType();
+     //   if (esAsignacion) {
+     //    obj1.setType(obj.getType());
+     //     return obj.getType();
+     //   }
 
     	if (!obj.getType().equals(obj1.getType()))//determino que es op entre long y ushort
         	return UsesType.LONG;
