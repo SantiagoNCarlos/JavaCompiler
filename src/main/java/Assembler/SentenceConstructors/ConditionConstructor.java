@@ -25,24 +25,9 @@ public class ConditionConstructor implements CodeConstructor {
         CodeGenerator.labelCountStack.push(CodeGenerator.codeLabelsCounter);
         CodeGenerator.codeLabelsCounter++;
 
-        String leftType = node.getLeftChild().getType();
-        String rightType = node.getRightChild().getType();
-
         // Determine actual types if nodes are leaves (constants)
-        if (node.getLeftChild().isLeaf()) {
-            if (leftNodeToken.contains("_us")) {
-                leftType = UsesType.USHORT;
-            } else if (leftNodeToken.contains("_l")) {
-                leftType = UsesType.LONG;
-            }
-        }
-        if (node.getRightChild().isLeaf()) {
-            if (rightNodeToken.contains("_us")) {
-                rightType = UsesType.USHORT;
-            } else if (rightNodeToken.contains("_l")) {
-                rightType = UsesType.LONG;
-            }
-        }
+        final String leftType = CodeConstructor.verifyActualType(node.getLeftChild(), leftNodeToken, node.getLeftChild().getType());
+        final String rightType = CodeConstructor.verifyActualType(node.getRightChild(), rightNodeToken, node.getRightChild().getType());
 
         StringBuilder returnCode = new StringBuilder();
 

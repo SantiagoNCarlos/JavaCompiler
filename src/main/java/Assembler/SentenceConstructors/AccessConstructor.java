@@ -27,6 +27,7 @@ public class AccessConstructor implements CodeConstructor {
 
     private static String getVarName(SyntaxNode objectNode, SyntaxNode memberNode) {
         // Gets member variable name for a particular object.
+        final String memb = memberNode.getName();
         return memberNode.getName() + "_" + getFullClassName(objectNode.getName());
     }
 

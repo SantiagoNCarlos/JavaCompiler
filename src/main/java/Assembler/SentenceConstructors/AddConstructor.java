@@ -23,24 +23,9 @@ public class AddConstructor implements CodeConstructor{
         final String auxVariableName = "@aux" + CodeGenerator.auxVariableCounter;
         CodeGenerator.auxVariableCounter++;
 
-        String leftType = node.getLeftChild().getType();
-        String rightType = node.getRightChild().getType();
-
         // Determine actual types if nodes are leaves (constants)
-        if (node.getLeftChild().isLeaf()) {
-            if (leftNodeToken.contains("_us")) {
-                leftType = UsesType.USHORT;
-            } else if (leftNodeToken.contains("_l")) {
-                leftType = UsesType.LONG;
-            }
-        }
-        if (node.getRightChild().isLeaf()) {
-            if (rightNodeToken.contains("_us")) {
-                rightType = UsesType.USHORT;
-            } else if (rightNodeToken.contains("_l")) {
-                rightType = UsesType.LONG;
-            }
-        }
+        final String leftType = CodeConstructor.verifyActualType(node.getLeftChild(), leftNodeToken, node.getLeftChild().getType());
+        final String rightType = CodeConstructor.verifyActualType(node.getRightChild(), rightNodeToken, node.getRightChild().getType());
 
         final String varType = node.getType();
         switch (varType) {
@@ -51,7 +36,7 @@ public class AddConstructor implements CodeConstructor{
                 returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
                         "\tADD AL, " + rightNodeToken + "\n" +
                         "\tMOV " + auxVariableName + ", AL\n" +
-                        "\tJC SumOverflowError\n";
+                        "\tJC _SumOverflowError_\n";
             }
             case UsesType.LONG -> {
                 StringBuilder code = new StringBuilder();
@@ -72,7 +57,7 @@ public class AddConstructor implements CodeConstructor{
                 }
 
                 code.append("\tMOV ").append(auxVariableName).append(", EAX\n")
-                        .append("\tJO SumOverflowError\n");
+                        .append("\tJO _SumOverflowError_\n");
 
                 returnCode = code.toString();
             }

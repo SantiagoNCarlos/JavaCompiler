@@ -11,32 +11,59 @@ public class SubConstructor implements CodeConstructor {
 		SyntaxNode leftChild = node.getLeftChild();
 		SyntaxNode rightChild = node.getRightChild();
 
-		String leftNodeToken = CodeConstructor.getToken(leftChild);
-		String rightNodeToken = CodeConstructor.getToken(rightChild);
+		final String leftNodeToken = CodeConstructor.getToken(leftChild);
+		final String rightNodeToken = CodeConstructor.getToken(rightChild);
 
 		return createDirective(node, leftNodeToken, rightNodeToken);
 	}
 
 	private static String createDirective(SyntaxNode node, final String leftNodeToken, final String rightNodeToken) {
-        String returnCode = null;
-
         final String auxVariableName = "@aux" + CodeGenerator.auxVariableCounter;
         CodeGenerator.auxVariableCounter++;
 
+        // Determine actual types if nodes are leaves (constants)
+        final String leftType = CodeConstructor.verifyActualType(node.getLeftChild(), leftNodeToken, node.getLeftChild().getType());
+        final String rightType = CodeConstructor.verifyActualType(node.getRightChild(), rightNodeToken, node.getRightChild().getType());
+
+        StringBuilder returnCode = new StringBuilder();
+
         switch (node.getType()) {
-            case UsesType.USHORT ->
-                returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
-                            "\tSUB AL, " + rightNodeToken + "\n" +
-                            "\tMOV " + auxVariableName + ",AL"; // Store the 8 bit USHORT mul in aux variable.
-            case UsesType.LONG ->
-                returnCode = "\tMOV EAX, " + leftNodeToken + "\n" +
-                            "\tSUB EAX, " + rightNodeToken + "\n" +
-                            "\tMOV " + auxVariableName + ",EAX"; // Store the 32 bit LONG mul in aux variable.
-            case UsesType.FLOAT ->
-                returnCode = "\tFLD " + CodeConstructor.replaceTokenUnvalidChars(leftNodeToken) + "\n" + // Load left node to FPU stack
-                            "\tFLD " + CodeConstructor.replaceTokenUnvalidChars(rightNodeToken) + "\n" + // Load right node to FPU stack
-                            "\tFSUB\n" + // Divide...
-                            "\tFSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
+            case UsesType.USHORT -> {
+                if (!leftType.equals(UsesType.USHORT) || !rightType.equals(UsesType.USHORT)) {
+                    throw new RuntimeException("Cannot subtract non-USHORT values in USHORT context");
+                }
+                returnCode.append("\tMOV AL, ").append(leftNodeToken).append("\n")
+                        .append("\tSUB AL, ").append(rightNodeToken).append("\n")
+                        .append("\tMOV ").append(auxVariableName).append(", AL");
+            }
+            case UsesType.LONG -> {
+                // Handle left operand
+                if (leftType.equals(UsesType.USHORT)) {
+                    returnCode.append("\tMOVZX EAX, BYTE PTR ").append(leftNodeToken).append("\n");
+                } else {
+                    returnCode.append("\tMOV EAX, ").append(leftNodeToken).append("\n");
+                }
+
+                // Handle right operand
+                if (rightType.equals(UsesType.USHORT)) {
+                    returnCode.append("\tMOVZX ECX, BYTE PTR ").append(rightNodeToken).append("\n")
+                            .append("\tSUB EAX, ECX\n");
+                } else {
+                    returnCode.append("\tSUB EAX, ").append(rightNodeToken).append("\n");
+                }
+
+                returnCode.append("\tMOV ").append(auxVariableName).append(", EAX");
+            }
+            case UsesType.FLOAT -> {
+                // Handle left operand
+                CodeConstructor.generateFloatLoadSentences(leftNodeToken, leftType, returnCode);
+
+                // Handle right operand
+                CodeConstructor.generateFloatLoadSentences(rightNodeToken, rightType, returnCode);
+
+                returnCode.append("\tFSUB\n")
+                        .append("\tFSTP ").append(auxVariableName);
+            }
         }
 
         SymbolTable.addSymbol(auxVariableName, TokenType.ID, node.getType(), UsesType.AUX_VAR);
@@ -46,6 +73,6 @@ public class SubConstructor implements CodeConstructor {
         node.setRightChild(null);
         node.setLeaf(true);
 
-        return returnCode;
+        return returnCode.toString();
 	}
 }

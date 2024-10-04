@@ -1,4 +1,5 @@
 {
+    *{ Este codigo debe fallar! }*
     CLASS cx {
         USHORT a,
     }

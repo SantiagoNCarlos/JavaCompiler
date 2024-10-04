@@ -23,76 +23,80 @@ printf PROTO C :PTR BYTE, :VARARG
 	ProductOverflowErrorMsg DB "Overflow detected in a FLOAT PRODUCT operation", 10, 0
 	RecursionErrorMsg DB "Recursive call detected", 10, 0
 
-	c_3_l DD 3
-	c_9_75 DD 9.75
-	c_1_33 DD 1.33
-	s__SI_ DB " SI ", 10, 0
+	c_global_cc_c1_global DD ?
+	b_global_cb_b1_global DB ?
+	b_global_cb_c1_global DB ?
+	a_global_ca_c1_global DB ?
+	c_5_us DB 5
+	b_global_cb DB ?
+	c_3_us DB 3
+	c_global_cc DD ?
 	c_2_us DB 2
-	c_1_3 DD 1.3
-	a_global DB ?
-	c_global DD ?
-	@aux3 DD ?
-	@aux2 DD ?
-	b_global DD ?
-	d_global DD ?
-	c_6_us DB 6
-	@aux1 DD ?
+	c_1_2 DD 1.2
+	a_global_ca DB ?
+	d_global_cc DD ?
+	d_global_cc_c1_global DD ?
+	c_0_us DB 0
+	a_global_ca_a1_global DB ?
+	c_9_us DB 9
 
 .code
 start:
 
-	MOVZX EAX, BYTE PTR c_6_us
-	MUL c_3_l
-	MOV @aux1, EAX
-	MOV EAX, @aux1
-	MOV b_global,EAX
+	MOV AL, c_9_us
+	MOV b_global_cc_c1_global,AL
 
-	MOVZX EAX, BYTE PTR c_2_us
-	MOV DWORD PTR [ESP-4], EAX
-	FILD DWORD PTR [ESP-4]
-	FLD c_1_3
-	FMUL
-	FLD ST(0)
-	FABS
-	FCOM _max_float_value_
-	FSTSW AX
-	SAHF
-	JA _ProductOverflowError_
-	FXCH
-	FSTP @aux2
-	FLD @aux2
-	FSTP c_global
+	MOV EAX, OFFSET FUNCTION_m_global_ca
+	CMP EAX, _current_function_
+	JE _RecursionError_
+	MOV _current_function_, EAX
 
-	FLD c_1_33
-	FILD DWORD PTR c_3_l
-	FADD
-	FSTP @aux3
-	FLD @aux3
-	FSTP d_global
+	MOV AL, a_global_ca_a1_global
+	MOV a_global_ca,AL
 
-	FILD DWORD PTR b_global
-	FCOM c_9_75
-	FSTSW AX
-	SAHF
-	JBE label1
+	CALL FUNCTION_m_global_ca
 
-	invoke StdOut, addr s__SI_
+	MOV AL, a_global_ca
+	MOV a_global_ca_a1_global,AL
+
+	MOV EAX, OFFSET FUNCTION_n_global_cb
+	CMP EAX, _current_function_
+	JE _RecursionError_
+	MOV _current_function_, EAX
+
+	MOV AL, b_global_cb_b1_global
+	MOV b_global_cb,AL
+
+	CALL FUNCTION_n_global_cb
+
+	MOV AL, b_global_cb
+	MOV b_global_cb_b1_global,AL
+
+	JMP _end_
+
+FUNCTION_m_global_ca PROC
+	MOV AL, a_global_ca
+	MOV BL, c_0_us
+	CMP AL, BL
+	JNE label1
 
 	label1:
 
-	invoke printf, cfm$("%hu\n"), a_global
+	MOV _current_function_, 0
+	RET 
+FUNCTION_m_global_ca ENDP
 
-	invoke printf, cfm$("%d\n"), b_global
+FUNCTION_n_global_cb PROC
+	MOV AL, b_global_cb
+	MOV BL, c_0_us
+	CMP AL, BL
+	JE label2
 
-	FLD c_global
-	FSTP _float_aux_print_
-	invoke printf, cfm$("%.20Lf\n"), _float_aux_print_
+	label2:
 
-	FLD d_global
-	FSTP _float_aux_print_
-	invoke printf, cfm$("%.20Lf\n"), _float_aux_print_
-
-	JMP _end_
+	MOV _current_function_, 0
+	RET 
+FUNCTION_n_global_cb ENDP
 
 	JMP _end_
 	_SumOverflowError_:

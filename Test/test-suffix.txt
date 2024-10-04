@@ -3,7 +3,7 @@
     USHORT a,
     LONG k; zz; zzz,
 
-    s=3.e2,
+    s=3.e+2,
     s=1.,
 
     IF ( s < 1.0 ){

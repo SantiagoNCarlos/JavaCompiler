@@ -2,18 +2,20 @@
 	*{ Test para comprobar operaciones aritmeticas. }*
 
 	LONG a; b,
-	FLOAT c,
-	FLOAT d,
+	FLOAT c;d;f,
 
     f = 4_us / 2_us,
 	a= 3_us,
 	b= 8_l,
-	b++,
 	a = a - b,
 
 	b = 6_l * 8_l,
-	c = -21.0,
-	d = 3.77E6,
+	c = -21.0 + 3_us - b,
+	d = 3.77E+6 + 0.5,
+
+    IF (b == 48_us) {
+        PRINT # VALOR CORRECTO #,
+    } END_IF,
 
 	PRINT a,
 	PRINT b,

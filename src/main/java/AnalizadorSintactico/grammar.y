@@ -606,7 +606,7 @@ factor:
                                 if (symbolType.equals(UsesType.USHORT)) {
                                     finalValue = value;
                                 } else {
-                                    finalValue = "-" + value;
+                                    final String newValue = (value.contains("-")) ? value : "-" + value;
                                     SymbolTable.addSymbol(finalValue, TokenType.CONSTANT, symbolType, UsesType.CONSTANT, LexicalAnalyzer.getLine());
                                 }
                                 $$ = new ParserVal(new SyntaxNode(finalValue, symbolType)); // Crear un nodo para la constante
@@ -620,8 +620,9 @@ factor:
                         value = processFloat(value, false);
 
                         if (!value.equals("Error")) {
-                            SymbolTable.addSymbol("-" + value, TokenType.CONSTANT, UsesType.FLOAT, UsesType.CONSTANT, LexicalAnalyzer.getLine());
-                            $$ = new ParserVal(new SyntaxNode("-" + value, UsesType.FLOAT)); // Crear un nodo para la constante
+                            final String newValue = (value.contains("-")) ? value : "-" + value;
+                            SymbolTable.addSymbol(newValue, TokenType.CONSTANT, UsesType.FLOAT, UsesType.CONSTANT, LexicalAnalyzer.getLine());
+                            $$ = new ParserVal(new SyntaxNode(newValue, UsesType.FLOAT)); // Crear un nodo para la constante
                         }
             }
       		| '-' ID {
@@ -1905,7 +1906,7 @@ private ArrayList<Attribute> getClassMembers(final String className) {
 
     // Get all members from a class
     for (Attribute entry : entries) {
-        if (entry.getToken().contains(classAmbit) && entry.getUso().equals(UsesType.VARIABLE)) {
+        if (entry.getToken().endsWith(classAmbit) && entry.getUso().equals(UsesType.VARIABLE)) {
             members.add(entry);
         }
     }

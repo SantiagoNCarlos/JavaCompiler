@@ -50,4 +50,15 @@ public interface CodeConstructor {
 	static void generateFloatLongLoad(String rightNodeToken, StringBuilder code) {
 		code.append("\tFILD DWORD PTR ").append(rightNodeToken).append("\n");
 	}
+
+	static String verifyActualType(SyntaxNode node, String nodeToken, String type) {
+		if (node.isLeaf()) {
+			if (nodeToken.contains("_us")) {
+				return UsesType.USHORT;
+			} else if (nodeToken.contains("_l")) {
+				return UsesType.LONG;
+			}
+		}
+		return type;
+	}
 }

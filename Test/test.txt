@@ -1,25 +1,48 @@
 {
-	*{ Test para comprobar operaciones aritmeticas. }*
+    CLASS ca {
+        USHORT a, *{ declaracion de atributo }*
+        VOID m() { *{ declaracion de metodo }*
+            IF (a == 0_us) { *{Esta linea debe dar un error sintactico, no es posible hacer asignaciones en una condicion. Corregir si se quiere probar esta funcionalidad}*
+                a = 5_us,
+            }
+            END_IF,
+            RETURN,
+        },
+    }
 
-    USHORT a,
-	LONG  b,
-	FLOAT c,
-	FLOAT d,
+    CLASS cb {
+        USHORT b, *{ declaracion de atributo }*
+        VOID n() { *{ declaracion de metodo }*
+            IF (b !! 0_us) {
+                b = 5_us,
+            }
+            END_IF,
+            RETURN,
+        },
+    }
 
-    b = 6_us * 3_l,
-    c = 2_us * 1.3,
+    CLASS cc {
+        cb, *{ nombre de la clase }*
+        ca, *{ nombre de la clase }*
+        FLOAT c, *{ declaracion de atributo }*
+        FLOAT d, *{ declaracion de atributo }*
 
-    d = 1.33 + 3_l,
+    }
 
-    IF (b > 9.75) {
-        PRINT # SI #,
-    } END_IF,
+    *{ declaracion de objetos de una clase }*
+    ca a1,
+    cb b1,
+    cc c1,
 
+    *{ referencias a metodos y atributos de una clase }*
+    a1.a = 3_us,
+    b1.b = 9_us,
+    c1.b = b1.b,
+    c1.c = 1.2,
+    c1.a = 2_us,
 
-    PRINT a,
-	PRINT b,
-    PRINT c,
-    PRINT d,
+    a1.m(),
+    b1.n(),
 }
 
 *{

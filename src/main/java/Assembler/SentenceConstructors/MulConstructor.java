@@ -22,24 +22,9 @@ public class MulConstructor implements CodeConstructor {
         final String auxVariableName = "@aux" + CodeGenerator.auxVariableCounter;
         CodeGenerator.auxVariableCounter++;
 
-        String leftType = node.getLeftChild().getType();
-        String rightType = node.getRightChild().getType();
-
         // Determine actual types if nodes are leaves (constants)
-        if (node.getLeftChild().isLeaf()) {
-            if (leftNodeToken.contains("_us")) {
-                leftType = UsesType.USHORT;
-            } else if (leftNodeToken.contains("_l")) {
-                leftType = UsesType.LONG;
-            }
-        }
-        if (node.getRightChild().isLeaf()) {
-            if (rightNodeToken.contains("_us")) {
-                rightType = UsesType.USHORT;
-            } else if (rightNodeToken.contains("_l")) {
-                rightType = UsesType.LONG;
-            }
-        }
+        final String leftType = CodeConstructor.verifyActualType(node.getLeftChild(), leftNodeToken, node.getLeftChild().getType());
+        final String rightType = CodeConstructor.verifyActualType(node.getRightChild(), rightNodeToken, node.getRightChild().getType());
 
         switch (node.getType()) {
             case UsesType.USHORT -> {
