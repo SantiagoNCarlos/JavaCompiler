@@ -30,9 +30,6 @@ public class AddConstructor implements CodeConstructor{
         final String varType = node.getType();
         switch (varType) {
             case UsesType.USHORT -> {
-                if (!leftType.equals(UsesType.USHORT) || !rightType.equals(UsesType.USHORT)) {
-                    throw new RuntimeException("Cannot add non-USHORT values in USHORT context");
-                }
                 returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
                         "\tADD AL, " + rightNodeToken + "\n" +
                         "\tMOV " + auxVariableName + ", AL\n" +

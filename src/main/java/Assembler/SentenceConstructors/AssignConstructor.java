@@ -50,15 +50,12 @@ public class AssignConstructor implements CodeConstructor{
 		}
 	}
 
-	private static String generateDirective(String leftType, String rightType,
+	public static String generateDirective(String leftType, String rightType,
 											String leftToken, String rightToken) {
 		StringBuilder directive = new StringBuilder();
 
 		switch (leftType) {
 			case UsesType.USHORT -> {
-				if (!rightType.equals(UsesType.USHORT)) {
-					Parser.yyerror("USHORTS solo pueden tener valores USHORTS asignados.");
-				}
 				directive.append("\tMOV AL, ").append(rightToken).append("\n")
 						 .append("\tMOV ").append(leftToken).append(",AL\n");
 			}

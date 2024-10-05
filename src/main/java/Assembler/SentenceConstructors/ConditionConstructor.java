@@ -33,9 +33,6 @@ public class ConditionConstructor implements CodeConstructor {
 
         switch (node.getType()) {
             case UsesType.USHORT -> {
-                if (!leftType.equals(UsesType.USHORT) || !rightType.equals(UsesType.USHORT)) {
-                    throw new RuntimeException("Cannot compare non-USHORT values in USHORT context");
-                }
                 returnCode.append("\tMOV AL, ").append(leftNodeToken).append("\n")
                         .append("\tMOV BL, ").append(rightNodeToken).append("\n")
                         .append("\tCMP AL, BL\n")

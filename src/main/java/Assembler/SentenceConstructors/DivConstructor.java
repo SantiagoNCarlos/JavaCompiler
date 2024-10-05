@@ -28,10 +28,6 @@ public class DivConstructor implements CodeConstructor {
 
        switch (node.getType()) {
            case UsesType.USHORT -> {
-               if (!rightType.equals(UsesType.USHORT)) {
-                   // Error: USHORT can only divide by USHORT
-                   throw new RuntimeException("Cannot divide USHORT by " + rightType);
-               }
                returnCode = "\tMOV AL, " + leftNodeToken + "\n" +
                        "\tMOV AH, 0\n" +
                        "\tDIV " + rightNodeToken + "\n" +

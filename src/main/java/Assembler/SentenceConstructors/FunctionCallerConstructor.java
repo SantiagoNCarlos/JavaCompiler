@@ -34,14 +34,18 @@ public class FunctionCallerConstructor implements CodeConstructor {
                         Optional<Attribute> funcAtt = SymbolTable.getInstance().getAttribute(funcName);
 
                         String auxVariableName = "";
+                        String auxVarType = "";
 
                         if (funcAtt.isPresent()) {
                             Attribute paramAtt = funcAtt.get().getParameter();
                             if (paramAtt != null) {
                                 auxVariableName += CodeConstructor.replaceTokenUnvalidChars(paramAtt.getToken());
+                                auxVarType += paramAtt.getType();
                             }
                         }
 
+                        returnCode += AssignConstructor.generateDirective(auxVarType, parameterType, auxVariableName, parameterName);
+/*
                         switch (parameterType) {
                             case UsesType.USHORT -> {
                                 returnCode += "\tMOV AL, " + parameterName + "\n" + // Load the 8-bit value into AL
@@ -55,7 +59,7 @@ public class FunctionCallerConstructor implements CodeConstructor {
                                 returnCode += "\tFLD " + parameterName + "\n" + // Load left node to FPU stack
                                             "\tFSTP " + auxVariableName + "\n"; // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
                             }
-                         }
+                         } */
                     }
                 }
             } else { // Function does not receive any parameters!

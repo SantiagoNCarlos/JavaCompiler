@@ -29,9 +29,6 @@ public class SubConstructor implements CodeConstructor {
 
         switch (node.getType()) {
             case UsesType.USHORT -> {
-                if (!leftType.equals(UsesType.USHORT) || !rightType.equals(UsesType.USHORT)) {
-                    throw new RuntimeException("Cannot subtract non-USHORT values in USHORT context");
-                }
                 returnCode.append("\tMOV AL, ").append(leftNodeToken).append("\n")
                         .append("\tSUB AL, ").append(rightNodeToken).append("\n")
                         .append("\tMOV ").append(auxVariableName).append(", AL");

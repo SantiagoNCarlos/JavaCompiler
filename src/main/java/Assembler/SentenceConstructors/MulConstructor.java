@@ -28,9 +28,6 @@ public class MulConstructor implements CodeConstructor {
 
         switch (node.getType()) {
             case UsesType.USHORT -> {
-                if (!leftType.equals(UsesType.USHORT) || !rightType.equals(UsesType.USHORT)) {
-                    throw new RuntimeException("Cannot multiply non-USHORT values in USHORT context");
-                }
                 returnCode.append("\tMOV AL, ").append(leftNodeToken).append("\n")
                         .append("\tMUL BYTE PTR ").append(rightNodeToken).append("\n")
                         .append("\tMOV ").append(auxVariableName).append(", AL");
