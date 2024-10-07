@@ -1,36 +1,23 @@
 {
+    *{ Test para probar las funciones }*
+
     CHECK FLOAT sub,
 
     VOID subtract(FLOAT sub){
-
-        CHECK FLOAT c; d,
-        c = -4.3,
-        d = -23.4,
+        FLOAT c; d,
+        c = -4.3 + 2.0,
+        d = -23.4 - 3.1,
         sub = c - d,
         d = d + sub,
 
-        IF (d <= -4.3) {
+        PRINT d,
+        IF (d > -4.3) {
             PRINT # CUENTA OK #,
         } END_IF,
 
         RETURN,
     },
 
-    VOID divide() {
-        CHECK USHORT x;y,
-        x = 2_us,
-        y = 3_us,
-        CHECK FLOAT division,
-        division = x / y,
-        IF ( division >= 0.6) {
-	    	PRINT # OTRA CUENTA OK #,
-	    }
-	    END_IF,
-	    RETURN,
-    },
-
+    sub = 3.0 + 2.3,
     subtract(sub),
-    divide(),
-	sub = 6_l - 3_l,
-	PRINT sub,
 }

@@ -1,7 +1,7 @@
 {
 	*{ Test para comprobar cadenas. }*
 	LONG k,
-	k = 6_l,
+	k = 6_l + 3_us,
 	PRINT # soy una CADENA #,
 	PRINT k,
 	PRINT 8_us,

@@ -1,9 +1,9 @@
 {
     CLASS ca {
         USHORT a, *{ declaracion de atributo }*
-        VOID m() { *{ declaracion de metodo }*
-            IF (a = 0_us) { *{Esta linea debe dar un error sintactico, no es posible hacer asignaciones en una condicion. }*
-                a = 5_us,
+        VOID m(USHORT z) { *{ declaracion de metodo }*
+            IF (z !! 0_us) {
+                a = z + 5_us,
             }
             END_IF,
             RETURN,
@@ -14,7 +14,7 @@
         USHORT b, *{ declaracion de atributo }*
         VOID n() { *{ declaracion de metodo }*
             IF (b !! 0_us) {
-                b = 5_us,
+                b = 5_us * b,
             }
             END_IF,
             RETURN,
@@ -22,10 +22,11 @@
     }
 
     CLASS cc {
+        cb, *{ nombre de la clase }*
         ca, *{ nombre de la clase }*
         FLOAT c, *{ declaracion de atributo }*
         FLOAT d, *{ declaracion de atributo }*
-        cb, *{ nombre de la clase }*
+
     }
 
     *{ declaracion de objetos de una clase }*
@@ -35,9 +36,15 @@
 
     *{ referencias a metodos y atributos de una clase }*
     a1.a = 3_us,
-    b1.b = 9_us,
-    c1.c = 1.2,
+    b1.b = 9_us * 1_us,
     c1.b = b1.b,
-    a1.m(),
-    b1.n(),
+    c1.c = 1.2,
+    c1.a = 2_us,
+
+    a1.m(b1.b),
+
+
+    IF (b1.b !! 5_us) {
+        PRINT a1.a,
+    } END_IF,
 }

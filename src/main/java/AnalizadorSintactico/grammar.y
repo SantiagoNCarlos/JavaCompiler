@@ -47,17 +47,49 @@ bloque:
             }
             | bloque sentencia {
                 if ($2.obj != null) {
-                    SyntaxNode blockNode = (SyntaxNode) $1.obj;
-                    SyntaxNode sentencesNode = (SyntaxNode) $2.obj;
+                    SyntaxNode sentenceNode = (SyntaxNode) $2.obj;
+                    final String sentenceName = sentenceNode.getName().toLowerCase();
+                    if (sentenceName.contains("if") || sentenceName.contains("while")) {
+                        basicBlockCounter++;
 
-                    checkSubtreeConstantPropagations(new SyntaxNode("checking node", blockNode, sentencesNode));
+                        propagatedConstantsValuesMap.clear();
+                        assignSentencesNodesList.clear();
 
-                    SyntaxNode assignNodes = createAssignSubtree();
-                    SyntaxNode completeNode = (assignNodes == null) ?
-                            sentencesNode :
-                            new SyntaxNode("Bloque de sentencias con asignaciones", assignNodes, sentencesNode);
+                        checkSubtreeConstantPropagations((SyntaxNode) $2.obj);
 
-                    $$ = new ParserVal(new SyntaxNode("Bloque de sentencias", blockNode, completeNode));
+                        SyntaxNode assignNodes = createAssignSubtree();
+                        SyntaxNode completeNode = (assignNodes == null) ?
+                                (SyntaxNode) $2.obj :
+                                new SyntaxNode("Bloque de sentencias con asignaciones", assignNodes, (SyntaxNode) $2.obj);
+
+
+
+                        propagatedConstantsValuesMap.clear();
+                        assignSentencesNodesList.clear();
+                        checkSubtreeConstantPropagations((SyntaxNode) $1.obj);
+
+                        SyntaxNode assignNodesLeftBlock = createAssignSubtree();
+                        SyntaxNode completeLeftNode = (assignNodes == null) ?
+                                (SyntaxNode) $1.obj :
+                                new SyntaxNode("Bloque de sentencias con asignaciones 2", assignNodesLeftBlock, (SyntaxNode) $1.obj);
+
+                        yyval = new ParserVal(new SyntaxNode("Bloque de sentencias - Cambio de bloque", completeLeftNode, completeNode));
+
+                        propagatedConstantsValuesMap.clear();
+                        assignSentencesNodesList.clear();
+                    } else {
+                        SyntaxNode blockNode = (SyntaxNode) $1.obj;
+                        SyntaxNode sentencesNode = (SyntaxNode) $2.obj;
+
+                        checkSubtreeConstantPropagations(new SyntaxNode("checking node", blockNode, sentencesNode));
+
+                        SyntaxNode assignNodes = createAssignSubtree();
+                        SyntaxNode completeNode = (assignNodes == null) ?
+                                sentencesNode :
+                                new SyntaxNode("Bloque de sentencias con asignaciones", assignNodes, sentencesNode);
+
+                        $$ = new ParserVal(new SyntaxNode("Bloque de sentencias", blockNode, completeNode));
+                    }
                 }
             }
       		| definicion_class {
@@ -77,55 +109,18 @@ bloque:
                     $$ = new ParserVal(new SyntaxNode("Bloque de sentencias21", (SyntaxNode) $2.obj, completeNode));
                 }
             }
-            | bloque_cambio_bloque_basico {
-                $$ = $1;
-            }
-            | bloque bloque_cambio_bloque_basico {
-                if ($2.obj != null) {
-                    basicBlockCounter++;
-
-                    propagatedConstantsValuesMap.clear();
-                    assignSentencesNodesList.clear();
-
-                    checkSubtreeConstantPropagations((SyntaxNode) $2.obj);
-
-                    SyntaxNode assignNodes = createAssignSubtree();
-                    SyntaxNode completeNode = (assignNodes == null) ?
-                            (SyntaxNode) $2.obj :
-                            new SyntaxNode("Bloque de sentencias con asignaciones", assignNodes, (SyntaxNode) $2.obj);
-
-
-
-                    propagatedConstantsValuesMap.clear();
-                    assignSentencesNodesList.clear();
-                    checkSubtreeConstantPropagations((SyntaxNode) $1.obj);
-
-                    SyntaxNode assignNodesLeftBlock = createAssignSubtree();
-                    SyntaxNode completeLeftNode = (assignNodes == null) ?
-                            (SyntaxNode) $1.obj :
-                            new SyntaxNode("Bloque de sentencias con asignaciones 2", assignNodesLeftBlock, (SyntaxNode) $1.obj);
-
-                    yyval = new ParserVal(new SyntaxNode("Bloque de sentencias - Cambio de bloque", completeLeftNode, completeNode));
-
-                    propagatedConstantsValuesMap.clear();
-                    assignSentencesNodesList.clear();
-                }
-            }
       		;
 
 sentencia:
             ejecucion ',' { $$ = $1; }
+            | bloque_if ',' { $$ = $1; }
+            | bloque_while ',' { $$ = $1; }
 	 		| declaracion ',' 
             | ejecucion error { //$$ = $1;
                                 logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','.");
                                 }
             | declaracion error { logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta una ','."); }
          	;
-
-bloque_cambio_bloque_basico:
-            bloque_if ',' { $$ = $1; }
-            | bloque_while ',' { $$ = $1; }
-            ;
 
 ejecucion:
             asignacion { $$ = $1;}
@@ -1285,13 +1280,14 @@ llamada:
 
 impresion:
             PRINT CADENA  {
-                                    logger.logDebugSyntax("Sentencia PRINT en la linea " + LexicalAnalyzer.getLine());
-                                    $$ = new ParserVal( new SyntaxNode("Print", new SyntaxNode($2.sval, "CADENA"), null, "CADENA"));
-                               }
+                    logger.logDebugSyntax("Sentencia PRINT en la linea " + LexicalAnalyzer.getLine());
+                    $$ = new ParserVal( new SyntaxNode("Print", new SyntaxNode($2.sval, "CADENA"), null, "CADENA"));
+               }
 			| PRINT factor  {
-			                        logger.logDebugSyntax("Sentencia PRINT en la linea " + LexicalAnalyzer.getLine());
-			                        $$ = new ParserVal( new SyntaxNode("Print", (SyntaxNode) $2.obj, null, "Factor" ));
-			                     }
+                    logger.logDebugSyntax("Sentencia PRINT en la linea " + LexicalAnalyzer.getLine());
+
+                    $$ = new ParserVal( new SyntaxNode("Print", (SyntaxNode) $2.obj, null, "Factor" ));
+                 }
 			| PRINT error {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el contenido de la impresion.");}
 			;
 

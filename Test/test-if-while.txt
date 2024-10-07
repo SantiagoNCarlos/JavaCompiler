@@ -1,18 +1,17 @@
 {
 	PRINT #Test para comprobar la funcionalidad de los bloques IF y WHILE#,
     USHORT s,
+    s = 1_us,
 
     LONG l,
-	l = 432554_l,
-	l = 1_l + 2_l,
-	l++,
+	l = 0_l,
 
     FLOAT h,
     h=2.,
-    h=h - 2_l,
 
     LONG k,
 
+    PRINT h,
     IF (s < 3_l) {
     	k = 8_l,
     	h = 4_l,
@@ -20,25 +19,27 @@
     	ii=8.0,
     }
     END_IF,
+    PRINT h,
 
-    *{ Se espera un error por falta de parentesis. }*
-    h = 2.,
-
+    PRINT # WHILE con L #,
     WHILE ( l < 6_l) DO {
-    	FLOAT bb,
-    	bb = 7.77777,
-    	h = 99_l,
+    	PRINT # Iterando #,
+    	l++,
     },
 
-    h=7.74,  
-    l=7_l,
-	l = 1_l * 3_l,
+    PRINT l,
+
+    h=7.74 + 1.2,
+
+    l = 3_us, *{ Cambiar valores para ver diferentes outputs! }*
+
+    PRINT h,
 
 	IF ( l < 6_l ) {
 	    IF (l > 2_l) {
 	        l=3_us,
-	        WHILE ( h > 0.1e3 ) DO {
-	            h = h + 1_us,
+	        WHILE ( h > 0.1e-1 ) DO {
+	            h = h - 1_us,
 	        },
 	    }
 	    ELSE {
@@ -47,10 +48,10 @@
 	        END_IF,
 	    }
 	    END_IF,
+	} ELSE {
+	    PRINT # l ya vale 6 #,
 	}
 	END_IF,
 
-	*{ Se espera un error por falta de sentencia. 
-	WHILE (3_l<6_l) DO }*
+	PRINT h,
 }
-

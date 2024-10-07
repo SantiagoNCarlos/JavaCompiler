@@ -1,7 +1,14 @@
 {
+    *{ Test simple para ver la propagacion de constantes en funcionamiento, y los cambios de bloque. }*
+    *{ Para mejor analisis, abrir el archivo .asm correspondiente a este programa. }*
     USHORT a;b,
 
     b = 1_us,
     a = b,
 
+    IF (b < 2_us) {
+        a = a * 3_us,
+    } END_IF,
+
+    a = b, *{ No se usa el valor constante de b dado que hubo cambio de bloque basico }*
 }
