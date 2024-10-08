@@ -754,7 +754,7 @@ final static String yyrule[] = {
 "impresion : PRINT error",
 };
 
-//#line 1294 "grammar.y"
+//#line 1334 "grammar.y"
 public static Logger logger = Logger.getInstance();
 public static String ambito = "global";
 public static boolean error = false;
@@ -3118,22 +3118,62 @@ break;
 case 163:
 //#line 1282 "grammar.y"
 {
-                                    logger.logDebugSyntax("Sentencia PRINT en la linea " + LexicalAnalyzer.getLine());
-                                    yyval = new ParserVal( new SyntaxNode("Print", new SyntaxNode(val_peek(0).sval, "CADENA"), null, "CADENA"));
-                               }
+                    logger.logDebugSyntax("Sentencia PRINT en la linea " + LexicalAnalyzer.getLine());
+                    yyval = new ParserVal( new SyntaxNode("Print", new SyntaxNode(val_peek(0).sval, "CADENA"), null, "CADENA"));
+               }
 break;
 case 164:
 //#line 1286 "grammar.y"
 {
-			                        logger.logDebugSyntax("Sentencia PRINT en la linea " + LexicalAnalyzer.getLine());
-			                        yyval = new ParserVal( new SyntaxNode("Print", (SyntaxNode) val_peek(0).obj, null, "Factor" ));
-			                     }
+                    logger.logDebugSyntax("Sentencia PRINT en la linea " + LexicalAnalyzer.getLine());
+
+                    SyntaxNode factorNode = (SyntaxNode) val_peek(0).obj;
+
+                    if (factorNode != null) {
+                        if (factorNode.isLeaf()) {
+                            final String nombreCompleto = getNameSymbolTableVariables(factorNode.getName());
+
+                            if (!nombreCompleto.equalsIgnoreCase("error")) {
+                                var t = SymbolTable.getInstance();
+                                var entrada = t.getAttribute(nombreCompleto);
+
+                                if (entrada.isPresent()) {
+                                    Attribute entry = entrada.get();
+                                    entry.setUsadaDerecho(true);
+
+                                    if (entry.isActive() && entry.getConstantValueBlock() == basicBlockCounter) {
+                                        final String value = entry.getValue();
+
+                                        factorNode.setPropagated(true);
+                                        factorNode.setBlockOfPropagation(basicBlockCounter);
+                                        factorNode.setPropagatedValue(value);
+                                        factorNode.setPropagatedValueType(entry.getType());
+                                    }
+                                }
+                            }
+                        } else {
+                            if (factorNode.getName().equalsIgnoreCase("acceso")) {
+                                Attribute memberAttr = getMemberVarAttribute(factorNode);
+                                if (memberAttr != null && memberAttr.isActive() && memberAttr.getConstantValueBlock() == basicBlockCounter) {
+                                    final String value = memberAttr.getValue();
+
+                                    factorNode.setPropagated(true);
+                                    factorNode.setBlockOfPropagation(basicBlockCounter);
+                                    factorNode.setPropagatedValue(value);
+                                    factorNode.setPropagatedValueType(memberAttr.getType());
+                                }
+                            }
+                        }
+                    }
+
+                    yyval = new ParserVal( new SyntaxNode("Print", factorNode, null, "Factor" ));
+                 }
 break;
 case 165:
-//#line 1290 "grammar.y"
+//#line 1330 "grammar.y"
 {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el contenido de la impresion.");}
 break;
-//#line 3060 "Parser.java"
+//#line 3100 "Parser.java"
 //########## END OF USER-SUPPLIED ACTIONS ##########
     }//switch
     //#### Now let's reduce... ####

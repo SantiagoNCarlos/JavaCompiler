@@ -23,15 +23,13 @@ printf PROTO C :PTR BYTE, :VARARG
 	ProductOverflowErrorMsg DB "Overflow detected in a FLOAT PRODUCT operation", 10, 0
 	RecursionErrorMsg DB "Recursive call detected", 10, 0
 
-	aaaaaaaaaaaaaaaaaaaa_f5_global DD ?
-	c_2147483646_l DD 2147483646
-	c_2147483647_l DD 2147483647
-	novalido_global DD ?
-	mine_global DD ?
-	maxe_global DD ?
+	c_5_us DB 5
+	a_global DB ?
 
 .code
 start:
+
+	invoke printf, cfm$("%hu\n"), c_5_us
 
 	JMP _end_
 

@@ -1286,7 +1286,46 @@ impresion:
 			| PRINT factor  {
                     logger.logDebugSyntax("Sentencia PRINT en la linea " + LexicalAnalyzer.getLine());
 
-                    $$ = new ParserVal( new SyntaxNode("Print", (SyntaxNode) $2.obj, null, "Factor" ));
+                    SyntaxNode factorNode = (SyntaxNode) $2.obj;
+
+                    if (factorNode != null) {
+                        if (factorNode.isLeaf()) {
+                            final String nombreCompleto = getNameSymbolTableVariables(factorNode.getName());
+
+                            if (!nombreCompleto.equalsIgnoreCase("error")) {
+                                var t = SymbolTable.getInstance();
+                                var entrada = t.getAttribute(nombreCompleto);
+
+                                if (entrada.isPresent()) {
+                                    Attribute entry = entrada.get();
+                                    entry.setUsadaDerecho(true);
+
+                                    if (entry.isActive() && entry.getConstantValueBlock() == basicBlockCounter) {
+                                        final String value = entry.getValue();
+
+                                        factorNode.setPropagated(true);
+                                        factorNode.setBlockOfPropagation(basicBlockCounter);
+                                        factorNode.setPropagatedValue(value);
+                                        factorNode.setPropagatedValueType(entry.getType());
+                                    }
+                                }
+                            }
+                        } else {
+                            if (factorNode.getName().equalsIgnoreCase("acceso")) {
+                                Attribute memberAttr = getMemberVarAttribute(factorNode);
+                                if (memberAttr != null && memberAttr.isActive() && memberAttr.getConstantValueBlock() == basicBlockCounter) {
+                                    final String value = memberAttr.getValue();
+
+                                    factorNode.setPropagated(true);
+                                    factorNode.setBlockOfPropagation(basicBlockCounter);
+                                    factorNode.setPropagatedValue(value);
+                                    factorNode.setPropagatedValueType(memberAttr.getType());
+                                }
+                            }
+                        }
+                    }
+
+                    $$ = new ParserVal( new SyntaxNode("Print", factorNode, null, "Factor" ));
                  }
 			| PRINT error {logger.logErrorSyntax("Linea " + LexicalAnalyzer.getLine() + ": falta el contenido de la impresion.");}
 			;

@@ -64,6 +64,7 @@ public class FunctionCallerConstructor implements CodeConstructor {
                 }
             } else { // Function does not receive any parameters!
                 funcName = rightChild.getName();
+                returnCode = "\tMOV EAX, OFFSET FUNCTION_" + CodeConstructor.replaceTokenUnvalidChars(funcName) + "\n\tCMP EAX, _current_function_\n\tJE _RecursionError_\n\tMOV _current_function_, EAX\n";
             }
         }
 

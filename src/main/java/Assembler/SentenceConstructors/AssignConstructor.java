@@ -1,8 +1,9 @@
 package Assembler.SentenceConstructors;
 
 import AnalizadorLexico.Enums.UsesType;
-import AnalizadorSintactico.Parser;
 import ArbolSintactico.SyntaxNode;
+
+import static Assembler.CodeGenerator.functionsLabelsStack;
 
 public class AssignConstructor implements CodeConstructor{
 
@@ -17,7 +18,7 @@ public class AssignConstructor implements CodeConstructor{
 	}
 
 	private static String createDirective(SyntaxNode node, final String leftNodeToken, final String rightNodeToken) {
-		if (node.isPropagated()) return "";
+		if (node.isPropagated() && functionsLabelsStack.isEmpty()) return "";
 
 		// Determine types
 		String varType = node.getType();
@@ -69,21 +70,8 @@ public class AssignConstructor implements CodeConstructor{
 				}
 			}
 			case UsesType.FLOAT -> {
-				if (rightType.equals(UsesType.USHORT)) {
-					directive.append("\tMOVZX EAX, ").append(rightToken).append("\n")
-							.append("\tMOV DWORD PTR [esp-4], EAX\n")
-							.append("\tFLD DWORD PTR [esp-4]\n")
-							.append("\tFSTP ").append(leftToken).append("\n");
-				} else if (rightType.equals(UsesType.LONG)) {
-					directive.append("\tMOV EAX, ").append(rightToken).append("\n")
-							.append("\tMOV DWORD PTR [esp-4], EAX\n")
-							.append("\tFILD DWORD PTR [esp-4]\n")
-							.append("\tFSTP ").append(leftToken).append("\n");
-				} else
-				{
-					directive.append("\tFLD ").append(rightToken).append("\n")
-							.append("\tFSTP ").append(leftToken).append("\n");
-				}
+				CodeConstructor.generateFloatLoadSentences(rightToken, rightType, directive);
+				directive.append("\tFSTP ").append(leftToken).append("\n");
 			}
 		}
 
