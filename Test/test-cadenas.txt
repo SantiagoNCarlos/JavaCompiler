@@ -1,5 +1,5 @@
 {
-	*{ Test para comprobar cadenas. }*
+	*{ Test para comprobar el funcionamiento de las cadenas. }*
 	LONG k,
 	k = 6_l + 3_us,
 	PRINT # soy una CADENA #,

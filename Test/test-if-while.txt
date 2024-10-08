@@ -1,5 +1,8 @@
 {
+    *{ Test para comprobar la funcionalidad de los bloques IF y WHILE }*
+
 	PRINT #Test para comprobar la funcionalidad de los bloques IF y WHILE#,
+
     USHORT s,
     s = 1_us,
 

@@ -2218,9 +2218,9 @@ case 50:
                             if (!symbolType.equals("Error")) {
                                 String finalValue = "";
                                 if (symbolType.equals(UsesType.USHORT)) {
-                                    finalValue = value;
+                                    finalValue = value; /* No puede haber valores negativos...*/
                                 } else {
-                                    final String newValue = (value.contains("-")) ? value : "-" + value;
+                                    finalValue = (value.contains("-")) ? value : "-" + value;
                                     SymbolTable.addSymbol(finalValue, TokenType.CONSTANT, symbolType, UsesType.CONSTANT, LexicalAnalyzer.getLine());
                                 }
                                 yyval = new ParserVal(new SyntaxNode(finalValue, symbolType)); /* Crear un nodo para la constante*/

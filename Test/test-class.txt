@@ -1,5 +1,6 @@
 {
-	*{ Test para comprobar la creacion de clases. }*
+	*{ Test para comprobar la creacion de clases y el acceso a miembros y metodos. }*
+
 	CLASS clase2, *{ Caso de forward declaration }*
 
     PRINT # AAA123 142 #,
@@ -25,13 +26,13 @@
 
 	FLOAT uu,
 	uu = cc * 9.8,
-	
+
 	CLASS testclase {
 		CHECK LONG l1;l2,
 
 		VOID foo(){
 			CHECK FLOAT c,
-			c=1.2,
+			c=1.2 + l1,
 			RETURN,
 		},
 
@@ -41,6 +42,6 @@
 	prueba.foo(),
 
 	IF (uu == cc) {
-	    uu = 5.9,
+	    uu++,
 	} END_IF,
 }

@@ -152,6 +152,8 @@ public class MethodCallerConstructor implements CodeConstructor {
             HashMap<String, String> variablesUsed = getUsedVariables(objectAttr.get().getType(), funcNode.getName());
             for (Map.Entry<String, String> functionVariable : variablesUsed.entrySet()) {
                 final String objectMember = functionVariable.getKey() + "_" + CodeConstructor.replaceTokenUnvalidChars(objectAttr.get().getToken());
+
+                //SymbolTable.getInstance().getAttribute()
                 switch (functionVariable.getValue()) {
                     case UsesType.USHORT -> {
                         returnCode.append("\tMOV AL, ").append(objectMember).append("\n").append( // Load the 8-bit value into AL
@@ -219,7 +221,7 @@ public class MethodCallerConstructor implements CodeConstructor {
         for (Attribute entry : entries) {
             final String token = entry.getToken();
             Set<String> scopes = entry.getAmbitosUsoIzquierdo();
-            if (token.contains(className)
+            if (token.endsWith(className)
                     && entry.getUso().equals(UsesType.VARIABLE)
                     && scopes != null
                     && (scopes.contains(methodName) || entry.isUsadaDerecho()))
