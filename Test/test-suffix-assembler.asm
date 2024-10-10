@@ -28,16 +28,21 @@ printf PROTO C :PTR BYTE, :VARARG
 	zz_global DD ?
 	c_1_0 DD 1.0
 	c_2147483647_l DD 2147483647
+	c_3_e_2 DD 3.e+2
 	a_global DB ?
 	c_0_us DB 0
-	c___3_40282347E38 DD --3.40282347E38
 	zzz_global DD ?
 	c_1_ DD 1.
 	c__3_40282347E38 DD -3.40282347E38
-	c_3_e2 DD 3.e2
 
 .code
 start:
+
+	FLD c_3_e_2
+	FSTP s_global
+
+	FLD c_1_
+	FSTP s_global
 
 	FLD c_1_
 	FSTP s_global
@@ -48,7 +53,22 @@ start:
 	SAHF
 	JAE label1
 
+	MOV AL, c_0_us
+	MOV a_global,AL
+
 	label1:
+
+	MOV AL, c_0_us
+	MOV a_global,AL
+
+	MOV EAX, c_2147483647_l
+	MOV k_global,EAX
+
+	FLD c__3_40282347E38
+	FSTP s_global
+
+	FLD c_1_
+	FSTP s_global
 
 	JMP _end_
 

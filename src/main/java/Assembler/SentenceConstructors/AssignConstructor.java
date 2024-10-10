@@ -18,17 +18,17 @@ public class AssignConstructor implements CodeConstructor{
 	}
 
 	private static String createDirective(SyntaxNode node, final String leftNodeToken, final String rightNodeToken) {
-		if (node.isPropagated() && functionsLabelsStack.isEmpty()) return "";
+		//if (node.isPropagated() && functionsLabelsStack.isEmpty()) return "";
 
 		// Determine types
 		String varType = node.getType();
 		String rightNodeType = node.getRightChild().getType();
 
 		// Handle leaf nodes type determination
-		if (node.getRightChild().isLeaf() && !rightNodeToken.contains("aux") && !node.getType().equals(UsesType.FLOAT)) {
+		if (node.getRightChild().isLeaf() && !rightNodeToken.contains("aux") && !node.getType().equals(UsesType.FLOAT) && !rightNodeToken.contains("global")) {
 			rightNodeType = determineTypeFromToken(rightNodeToken);
 		}
-		if (node.getLeftChild().isLeaf() && !leftNodeToken.contains("aux")) {
+		if (node.getLeftChild().isLeaf() && !leftNodeToken.contains("aux") && !node.getName().contains(":")) {
 			varType = node.getLeftChild().getType();
 		}
 

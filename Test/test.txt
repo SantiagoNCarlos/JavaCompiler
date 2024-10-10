@@ -1,3 +1,81 @@
 {
-	*{ Archivo para generar nuevos tests rapidos. }*
+	*{ Test general para probar funcionalidades del sistema. }*
+	CLASS parent {
+	    LONG p,
+
+	    *{ Convierte un numero pasado por parametro en 10, sumando o restando de a uno. }*
+	    VOID convert2ten(LONG newp) {
+	        IF (p !! newp) {
+	            IF (newp > 10_us) {
+                    WHILE (newp > 10_us) DO {
+                        newp = newp - 1_us,
+                    },
+	            } ELSE {
+                    WHILE (newp < 10_us) DO {
+                        newp++,
+                    },
+	            }
+	            END_IF,
+	            p = newp,
+	        }
+	        END_IF,
+	        RETURN,
+	    },
+	}
+
+	CLASS clase {
+	    parent,
+	    USHORT a,
+	    LONG b,
+	    FLOAT c,
+
+	    VOID updatea(USHORT newa) {
+	        a = newa,
+	        RETURN,
+	    },
+
+	    VOID updateb(LONG newb) {
+	        IF (b !! newb)
+	            b = newb,
+	        END_IF,
+	        RETURN,
+	    },
+
+	    VOID updatec(FLOAT newc) {
+	        c = newc + a,
+	        RETURN,
+	    },
+	}
+
+	FLOAT div,
+	div = 2.0,
+
+	VOID printhalf(FLOAT a) {
+	    FLOAT half,
+	    half = a / div,
+	    PRINT half,
+	    RETURN,
+	},
+
+    *{ Creo un objeto }*
+	clase object,
+
+    *{ Asigno valores a miembro de la clase }*
+    object.a = 20_us,
+    PRINT # VALOR DE a #,
+    PRINT object.a,
+
+    *{ Ejecuto metodos de la clase }*
+    object.convert2ten(15_us),
+    object.updatec(5.0),
+
+    PRINT # VALOR DE p #,
+    PRINT object.p,
+
+    PRINT # VALOR DE c #,
+    PRINT object.c,
+
+    *{ Ejecuto una funcion global del programa }*
+    PRINT # MITAD DE a #,
+	printhalf(object.a),
 }

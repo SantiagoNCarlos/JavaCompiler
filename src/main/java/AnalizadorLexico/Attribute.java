@@ -1,5 +1,7 @@
 package AnalizadorLexico;
 
+import AnalizadorSintactico.Parser;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -10,7 +12,8 @@ public class Attribute {
     private int line;
     public String uso;    
     boolean esCheck = false;
-    Set<String> ambitosUsoIzquierdo = new HashSet<>();
+    private Set<String> ambitosUsoIzquierdo = new HashSet<>();
+	private Set<String> ambitosUsoDerecho = new HashSet<>();
     boolean usadaDerecho = false;
 	private Attribute parameter = null;
 	private String value = null;
@@ -69,9 +72,13 @@ public class Attribute {
 		return esCheck;
 	}
 	public void addAmbito(String ambito) {
-		if (!this.ambitosUsoIzquierdo.contains(ambito))
-			this.ambitosUsoIzquierdo.add(ambito);
+        this.ambitosUsoIzquierdo.add(ambito);
 	}
+
+	public void addUsoDerecho(String ambito) {
+        this.ambitosUsoDerecho.add(ambito);
+	}
+
 	public void setEsCheck(boolean esCheck) {
 		this.esCheck = esCheck;
 	}
@@ -89,6 +96,7 @@ public class Attribute {
 	}
 
 	public void setUsadaDerecho(boolean usadaDerecho) {
+		ambitosUsoDerecho.add(Parser.ambito);
 		this.usadaDerecho = usadaDerecho;
 	}
 
@@ -173,5 +181,13 @@ public class Attribute {
 
     public void setConstantValueBlock(int constantValueBlock) {
         this.constantValueBlock = constantValueBlock;
+    }
+
+    public Set<String> getAmbitosUsoDerecho() {
+        return ambitosUsoDerecho;
+    }
+
+    public void setAmbitosUsoDerecho(Set<String> ambitosUsoDerecho) {
+        this.ambitosUsoDerecho = ambitosUsoDerecho;
     }
 }

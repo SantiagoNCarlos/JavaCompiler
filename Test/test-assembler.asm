@@ -23,106 +23,220 @@ printf PROTO C :PTR BYTE, :VARARG
 	ProductOverflowErrorMsg DB "Overflow detected in a FLOAT PRODUCT operation", 10, 0
 	RecursionErrorMsg DB "Recursive call detected", 10, 0
 
-	pp_global_clase2_var_global DD ?
-	c_9_8 DD 9.8
+	b_global_clase_object_global DD ?
+	newa_global_clase_updatea DB ?
 	@aux4 DD ?
-	c_global_testclase_foo DD ?
-	s__AAA123_142_ DB " AAA123 142 ", 10, 0
-	l2_global_testclase DD ?
-	l1_global_testclase_prueba_global DD ?
+	a_global_clase DB ?
+	s__MITAD_DE_a_ DB " MITAD DE a ", 10, 0
+	b_global_clase DD ?
+	a_global_clase_object_global DB ?
+	c_global_clase DD ?
+	half_global_printhalf DD ?
+	c_15_us DB 15
+	p_global_parent_object_global DD ?
 	@aux3 DD ?
 	@aux2 DD ?
+	c_1_l DD 1
 	@aux1 DD ?
-	c_2_l DD 2
-	cc_global DD ?
-	pp_global_clase2 DD ?
-	k_global DD ?
-	z_global_clase2_foo2 DD ?
-	l2_global_testclase_prueba_global DD ?
-	pp_global_clase2_prueba_global DD ?
-	c_1_0 DD 1.0
-	c_1_2 DD 1.2
-	uu_global DD ?
-	l1_global_testclase DD ?
+	newc_global_clase_updatec DD ?
+	newb_global_clase_updateb DD ?
+	c_20_us DB 20
+	s__VALOR_DE_p_ DB " VALOR DE p ", 10, 0
+	c_global_clase_object_global DD ?
+	newp_global_parent_convert2ten DD ?
+	a_global_printhalf DD ?
+	div_global DD ?
+	c_2_0 DD 2.0
+	c_10_us DB 10
+	c_5_0 DD 5.0
+	p_global_parent DD ?
+	c_1_us DB 1
+	s__VALOR_DE_a_ DB " VALOR DE a ", 10, 0
+	s__VALOR_DE_c_ DB " VALOR DE c ", 10, 0
 
 .code
 start:
 
-	invoke StdOut, addr s__AAA123_142_
+	FLD c_2_0
+	FSTP div_global
 
-	FLD cc_global
-	FLD c_1_0
-	FADD
-	FSTP @aux1
-	FLD @aux1
-	FSTP cc_global
+	MOV AL, c_20_us
+	MOV a_global_clase_object_global,AL
 
-	FLD cc_global
-	FSTP _float_aux_print_
-	invoke printf, cfm$("%.20Lf\n"), _float_aux_print_
+	invoke StdOut, addr s__VALOR_DE_a_
 
-	FLD cc_global
-	FLD c_9_8
-	FMUL
-	FLD ST(0)
-	FABS
-	FCOM _max_float_value_
-	FSTSW AX
-	SAHF
-	JA _ProductOverflowError_
-	FXCH
-	FSTP @aux2
-	FLD @aux2
-	FSTP uu_global
+	invoke printf, cfm$("%hu\n"), c_20_us
 
-	MOV EAX, OFFSET FUNCTION_foo_global_testclase
+	MOV EAX, OFFSET FUNCTION_convert2ten_global_parent
 	CMP EAX, _current_function_
 	JE _RecursionError_
 	MOV _current_function_, EAX
 
-	MOV EAX, l1_global_testclase_prueba_global
-	MOV l1_global_testclase,EAX
-	CALL FUNCTION_foo_global_testclase
+	MOV EAX, p_global_parent_object_global
+	MOV p_global_parent,EAX
+	MOVZX EAX, c_15_us
+	MOV newp_global_parent_convert2ten,EAX
 
-	MOV EAX, l1_global_testclase
-	MOV l1_global_testclase_prueba_global,EAX
+	CALL FUNCTION_convert2ten_global_parent
 
-	FLD uu_global
-	FCOM cc_global
-	FSTSW AX
-	SAHF
-	JNE label1
+	MOV EAX, p_global_parent
+	MOV p_global_parent_object_global,EAX
 
-	FLD uu_global
-	FLD c_1_0
-	FADD
-	FSTP @aux3
-	FLD @aux3
-	FSTP uu_global
+	MOV EAX, OFFSET FUNCTION_updatec_global_clase
+	CMP EAX, _current_function_
+	JE _RecursionError_
+	MOV _current_function_, EAX
 
-	label1:
+	MOV AL, a_global_clase_object_global
+	MOV a_global_clase,AL
+
+	FLD c_global_clase_object_global
+	FSTP c_global_clase
+	FLD c_5_0
+	FSTP newc_global_clase_updatec
+
+	CALL FUNCTION_updatec_global_clase
+
+	MOV AL, a_global_clase
+	MOV a_global_clase_object_global,AL
+	FLD c_global_clase
+	FSTP c_global_clase_object_global
+
+	invoke StdOut, addr s__VALOR_DE_p_
+
+	invoke printf, cfm$("%d\n"), p_global_parent_object_global
+
+	invoke StdOut, addr s__VALOR_DE_c_
+
+	FLD c_global_clase_object_global
+	FSTP _float_aux_print_
+	invoke printf, cfm$("%.20Lf\n"), _float_aux_print_
+
+	invoke StdOut, addr s__MITAD_DE_a_
+
+	MOV EAX, OFFSET FUNCTION_printhalf_global
+	CMP EAX, _current_function_
+	JE _RecursionError_
+	MOV _current_function_, EAX
+	MOVZX EAX, BYTE PTR a_global_clase_object_global
+	MOV DWORD PTR [ESP-4], EAX
+	FILD DWORD PTR [ESP-4]
+	FSTP a_global_printhalf
+
+	CALL FUNCTION_printhalf_global
 
 	JMP _end_
 
-FUNCTION_foo2_global_clase2 PROC
-	MOV EAX, c_2_l
-	MOV z_global_clase2_foo2,EAX
+FUNCTION_convert2ten_global_parent PROC
+	MOV EBX, p_global_parent
+	MOV ECX, newp_global_parent_convert2ten
+	CMP EBX, ECX
+	JE label1
+
+	MOV EBX, newp_global_parent_convert2ten
+	MOVZX ECX, BYTE PTR c_10_us
+	CMP EBX, ECX
+	JBE label2
+
+	label3:
+	MOV EBX, newp_global_parent_convert2ten
+	MOVZX ECX, BYTE PTR c_10_us
+	CMP EBX, ECX
+	JBE label4
+
+	MOV EAX, newp_global_parent_convert2ten
+	MOVZX ECX, BYTE PTR c_1_us
+	SUB EAX, ECX
+	MOV @aux1, EAX
+	MOV EAX, @aux1
+	MOV newp_global_parent_convert2ten,EAX
+
+	JMP label3
+	label4:
+
+	JMP label5
+	label2:
+
+	label6:
+	MOV EBX, newp_global_parent_convert2ten
+	MOVZX ECX, BYTE PTR c_10_us
+	CMP EBX, ECX
+	JAE label7
+
+	MOV EAX, newp_global_parent_convert2ten
+	ADD EAX, c_1_l
+	MOV @aux2, EAX
+	JO _SumOverflowError_
+
+	MOV EAX, @aux2
+	MOV newp_global_parent_convert2ten,EAX
+
+	JMP label6
+	label7:
+
+	label5:
+
+	MOV EAX, newp_global_parent_convert2ten
+	MOV p_global_parent,EAX
+
+	label1:
 
 	MOV _current_function_, 0
 	RET 
-FUNCTION_foo2_global_clase2 ENDP
+FUNCTION_convert2ten_global_parent ENDP
 
-FUNCTION_foo_global_testclase PROC
-	FLD c_1_2
-	FILD DWORD PTR l1_global_testclase
+FUNCTION_updatea_global_clase PROC
+	MOV AL, newa_global_clase_updatea
+	MOV a_global_clase,AL
+
+	MOV _current_function_, 0
+	RET 
+FUNCTION_updatea_global_clase ENDP
+
+FUNCTION_updateb_global_clase PROC
+	MOV EBX, b_global_clase
+	MOV ECX, newb_global_clase_updateb
+	CMP EBX, ECX
+	JE label8
+
+	MOV EAX, newb_global_clase_updateb
+	MOV b_global_clase,EAX
+
+	label8:
+
+	MOV _current_function_, 0
+	RET 
+FUNCTION_updateb_global_clase ENDP
+
+FUNCTION_updatec_global_clase PROC
+	FLD newc_global_clase_updatec
+	MOVZX EAX, BYTE PTR a_global_clase
+	MOV DWORD PTR [ESP-4], EAX
+	FILD DWORD PTR [ESP-4]
 	FADD
+	FSTP @aux3
+	FLD @aux3
+	FSTP c_global_clase
+
+	MOV _current_function_, 0
+	RET 
+FUNCTION_updatec_global_clase ENDP
+
+FUNCTION_printhalf_global PROC
+	FLD a_global_printhalf
+	FLD div_global
+	FDIV
 	FSTP @aux4
 	FLD @aux4
-	FSTP c_global_testclase_foo
+	FSTP half_global_printhalf
+
+	FLD half_global_printhalf
+	FSTP _float_aux_print_
+	invoke printf, cfm$("%.20Lf\n"), _float_aux_print_
 
 	MOV _current_function_, 0
 	RET 
-FUNCTION_foo_global_testclase ENDP
+FUNCTION_printhalf_global ENDP
 
 	JMP _end_
 	_SumOverflowError_:

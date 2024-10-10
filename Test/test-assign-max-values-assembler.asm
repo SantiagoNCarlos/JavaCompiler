@@ -16,7 +16,7 @@ printf PROTO C :PTR BYTE, :VARARG
 .stack 200h
 .data
 
-	aux_2bytes DW 0
+	_float_aux_print_ DQ 0
 	_current_function_ DD 0
 	_max_float_value_ DD 3.40282347e+38
 	SumOverflowErrorMsg DB "Overflow detected in a INTEGER SUM operation", 10, 0
@@ -36,7 +36,6 @@ printf PROTO C :PTR BYTE, :VARARG
 	c_1_ DD 1.
 	@aux1 DD ?
 	aaaaaaaaaaaaaaaaaaaa_f5_global DD ?
-	c__3_40282348E_38 DD -3.40282348E-38
 	c_4_l DD 4
 	maxs_global DB ?
 	s__TODO_JOYA_ DB " TODO JOYA ", 10, 0
@@ -53,22 +52,63 @@ printf PROTO C :PTR BYTE, :VARARG
 .code
 start:
 
-	invoke printf, cfm$("%llu\n"), novalido_global
+	MOV EAX, c_2147483647_l
+	MOV maxe_global,EAX
 
-	invoke printf, cfm$("%hu\n"), maxs_global
+	MOV EAX, c__2147483648_l
+	MOV mine_global,EAX
+
+	MOV EAX, c__2147483648_l
+	MOV novalido_global,EAX
+
+	MOV EAX, c_2147483647_l
+	MOV novalido_global,EAX
+
+	FLD c_3_40282348E_38
+	FSTP minf_global
+
+	FLD c_3_40282347E_38
+	FSTP maxf_global
+
+	FLD c_3_40282347E38
+	FSTP novalidof_global
+
+	MOV AL, c_0_us
+	MOV mins_global,AL
+
+	MOV AL, c_255_us
+	MOV maxs_global,AL
+
+	MOV AL, c_255_us
+	MOV novalidos_global,AL
+
+	FLD c__5
+	FSTP f1_global
+
+	FLD c_1_
+	FSTP f2_global
+
+	MOV EAX, c_2147483647_l
+	MOV novalido_global,EAX
+
+	MOV EAX, c_4_l
+	MOV aaaaaaaaaaaaaaaaaaaa_f5_global,EAX
+
+	invoke printf, cfm$("%d\n"), c_2147483647_l
+
+	invoke printf, cfm$("%hu\n"), c_255_us
 
 	FLD c__5
 	FLD c_1_
-	FMUL 
+	FMUL
 	FLD ST(0)
-	FABS 
+	FABS
 	FCOM _max_float_value_
 	FSTSW AX
 	SAHF
 	JA _ProductOverflowError_
 	FXCH
 	FSTP @aux1
-
 	FLD @aux1
 	FSTP f1_global
 

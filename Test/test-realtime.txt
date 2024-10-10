@@ -1,0 +1,41 @@
+{
+    *{ 
+    Este test pone a prueba los chequeos en tiempo real requeridos. Estos son: 
+            1. Llamados recursivos.
+            2. Overflow en suma de enteros.
+            3. Overflow en producto de flotantes.
+    }*
+
+
+
+    PRINT # VERIFICACION DE RECURSION #,
+    VOID func (USHORT p) {
+        p++,
+        func(p),
+        RETURN,
+    },
+
+    *{ COMENTAR LLAMADO PARA PROBAR SIGUIENTE CHEQUEO! }*
+    func(1_us), *{ Esta linea generara un error en tiempo real por la deteccion de una recursion! }*
+
+
+
+    PRINT # VERIFICACION DE OVERFLOW EN PRODUCTO DE FLOATS #,
+    FLOAT f1; f2,
+
+    f1 = 3.40282347e+38,
+    f2 = 3.40282347e+38,
+
+    *{ COMENTAR PRODUCTO PARA PROBAR SIGUIENTE CHEQUEO! }*
+    f1 = f1 * f2,
+
+
+
+    PRINT # VERIFICACION DE OVERFLOW EN SUMA DE ENTEROS #,
+    LONG l1; l2,
+
+    l1 = 999999999999_l,
+    l2 = 999999999999_l,
+
+    l1 = l1 + l2,
+}

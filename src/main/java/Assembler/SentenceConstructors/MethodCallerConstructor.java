@@ -3,7 +3,6 @@ package Assembler.SentenceConstructors;
 import AnalizadorLexico.Attribute;
 import AnalizadorLexico.Enums.UsesType;
 import AnalizadorLexico.SymbolTable;
-import AnalizadorSintactico.Parser;
 import ArbolSintactico.SyntaxNode;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -12,6 +11,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static AnalizadorSintactico.Parser.classFullNames;
+import static AnalizadorSintactico.Parser.compositionMap;
+import static AnalizadorSintactico.Parser.getClassMembers;
 
 public class MethodCallerConstructor implements CodeConstructor {
 
@@ -110,14 +111,15 @@ public class MethodCallerConstructor implements CodeConstructor {
         final String objectType = objectAttr.map(Attribute::getType).orElse("");
 
         // Obtener las clases padre del tipo del objeto y agregar el tipo del objeto
-        List<String> parentClasses = Parser.compositionMap.get(classFullNames.get(objectType));
-        if (parentClasses == null) {
-            parentClasses = new ArrayList<>();
+        List<String> parentClasses = compositionMap.get(classFullNames.get(objectType));
+        ArrayList<String> parentsAndClass = new ArrayList<>();
+        if (parentClasses != null) {
+            parentsAndClass.addAll(parentClasses);
         }
-        parentClasses.add(objectType);
+        parentsAndClass.add(objectType);
 
         // Crear un Set con solo el nombre de la clase
-        Set<String> parentClassPrefixes = parentClasses.stream()
+        Set<String> parentClassPrefixes = parentsAndClass.stream()
                 .map(parentClass -> parentClass.split(":")[0])
                 .collect(Collectors.toSet());
 
@@ -153,6 +155,7 @@ public class MethodCallerConstructor implements CodeConstructor {
             for (Map.Entry<String, String> functionVariable : variablesUsed.entrySet()) {
                 final String objectMember = functionVariable.getKey() + "_" + CodeConstructor.replaceTokenUnvalidChars(objectAttr.get().getToken());
 
+                returnCode.append("\n");
                 //SymbolTable.getInstance().getAttribute()
                 switch (functionVariable.getValue()) {
                     case UsesType.USHORT -> {
@@ -163,7 +166,7 @@ public class MethodCallerConstructor implements CodeConstructor {
                                 "\tMOV ").append(objectMember).append(",AL\n");
                         }
                     case UsesType.LONG -> {
-                        returnCode.append("\tMOV EAX, ").append(objectMember).append("\n").append("\tMOV ").append(functionVariable.getKey()).append(",EAX"); // Store the 32 bit LONG mul in aux variable.
+                        returnCode.append("\tMOV EAX, ").append(objectMember).append("\n").append("\tMOV ").append(functionVariable.getKey()).append(",EAX\n"); // Store the 32 bit LONG mul in aux variable.
                         // Update values of the affected members!
                         restoreMembersCode.append("\tMOV EAX, ").append(functionVariable.getKey()).append("\n").append("\tMOV ").append(objectMember).append(",EAX\n");
                         }
@@ -181,54 +184,50 @@ public class MethodCallerConstructor implements CodeConstructor {
         return Pair.of(returnCode.toString(), restoreMembersCode.toString());
     }
 
-
     private static HashMap<String, String> getUsedVariables(String className, String methodName) {
-        ArrayList<Attribute> entries = new ArrayList<>(SymbolTable.getTableMap().values());
         HashMap<String, String> members = new HashMap<>();
 
-        for (Attribute entry : entries) {
-            final String token = entry.getToken();
-
-            if (token.contains(className)
-                    && token.startsWith(methodName + ":")
-                    && entry.getUso().equals(UsesType.FUNCTION))
-            {
-                // Get method name and rearrange it
-                String[] parts = token.split(":");
-
-                if (parts.length > 1) {
-                    StringBuilder rearrangedToken = new StringBuilder();
-
-                    // Add all parts except the first (method name)
-                    for (int i = 1; i < parts.length; i++) {
-                        rearrangedToken.append(parts[i]);
-                        if (i < parts.length - 1) {
-                            rearrangedToken.append(":");
-                        }
-                    }
-
-                    // Add the method name at the end
-                    rearrangedToken.append(":").append(parts[0]);
-
-                    // Add the full name of the method to the variable
-                    methodName = rearrangedToken.toString();
-                }
-                break;
+        ArrayList<Attribute> classMembers = getClassMembers(className);
+        if (classMembers == null) {
+            classMembers = new ArrayList<>();
+        }
+        ArrayList<String> parentClasses = compositionMap.get(classFullNames.get(className));
+        if (parentClasses != null) {
+            for (String parentClass : parentClasses) {
+                classMembers.addAll(getClassMembers(parentClass));
             }
         }
 
-        // Get all members from a class
-        for (Attribute entry : entries) {
+        for (Attribute entry : classMembers) {
             final String token = entry.getToken();
-            Set<String> scopes = entry.getAmbitosUsoIzquierdo();
-            if (token.endsWith(className)
-                    && entry.getUso().equals(UsesType.VARIABLE)
-                    && scopes != null
-                    && (scopes.contains(methodName) || entry.isUsadaDerecho()))
+            Set<String> leftScopes = entry.getAmbitosUsoIzquierdo();
+            Set<String> rightScopes = entry.getAmbitosUsoDerecho();
+
+            // Busco usos izquierdos
+            boolean isVarUsedOnLeft = false;
+            if (leftScopes != null)
+                for (String scope : leftScopes) {
+                    if (scope.endsWith(methodName)) {
+                        isVarUsedOnLeft = true;
+                        break;
+                    }
+                }
+            // Busco usos derechos
+            boolean isVarUsedOnRight = false;
+            if (rightScopes != null)
+                for (String scope : rightScopes) {
+                    if (scope.endsWith(methodName)) {
+                        isVarUsedOnRight = true;
+                        break;
+                    }
+                }
+
+            if (isVarUsedOnLeft || isVarUsedOnRight)
             {
                 members.put(CodeConstructor.replaceTokenUnvalidChars(token), entry.getType());
             }
         }
+
         return members;
     }
 }

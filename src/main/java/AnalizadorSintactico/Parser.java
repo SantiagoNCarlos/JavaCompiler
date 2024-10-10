@@ -869,18 +869,19 @@ private boolean metodoExisteEnClase(String classType, String methodName) {
     for (Map.Entry<String, Attribute> entry : SymbolTable.getTableMap().entrySet()) {
         Attribute attribute = entry.getValue();
 
-        if (parentClasses == null) {
-          parentClasses = new ArrayList<>();
+        boolean containsClass = false;
+
+        if (attribute.getToken().contains(classType.split(":")[0])) {
+          containsClass = true;
         }
 
-        parentClasses.add(classType);
-
-        boolean containsClass = false;
-        for (String parentClass : parentClasses) { // Buscamos en clase y en sus padres
-            if (attribute.getToken().contains(parentClass.split(":")[0])) {
-                containsClass = true;
-                break;
+        if (parentClasses != null && !containsClass) {
+          for (String parentClass : parentClasses) { // Buscamos en los padres de la clase.
+            if (attribute.getToken().contains(parentClass.split(":")[0]) ) {
+              containsClass = true;
+              break;
             }
+          }
         }
 
         if (attribute.getUso() != null && attribute.getUso().equals(UsesType.FUNCTION) && containsClass) {
@@ -1086,13 +1087,14 @@ private String getTypeSymbolTableVariablesEnAcceso(String sval, String sval2) {
 
     ArrayList<String> composedClassesList = compositionMap.get(classFullNames.get(objectType));
 
-    if (composedClassesList == null) {
-      composedClassesList = new ArrayList<>();
+    ArrayList<String> parentsAndClass = new ArrayList<>();
+    if (composedClassesList != null) {
+      parentsAndClass.addAll(composedClassesList);
     }
 
-    composedClassesList.add(objectType);
+    parentsAndClass.add(objectType);
 
-    for (String composedClass : composedClassesList) {
+    for (String composedClass : parentsAndClass) {
       final String nombreCompleto = sval + ambitoActual + ":" + composedClass.split(":")[0];
       final String foundType = hallarTipoEnAmbito(nombreCompleto);
       if (!foundType.isEmpty()) {
@@ -1346,7 +1348,7 @@ private void parseAndAddToClassMap(String input) {
     }
 }
 
-private String swapComponents(String input) {
+private static String swapComponents(String input) {
     String[] parts = input.split(":");
     if (parts.length == 2) {
         return parts[1] + ":" + parts[0];
@@ -1356,7 +1358,7 @@ private String swapComponents(String input) {
     }
 }
 
-private ArrayList<Attribute> getClassMembers(final String className) {
+public static ArrayList<Attribute> getClassMembers(final String className) {
     ArrayList<Attribute> entries = new ArrayList<>(SymbolTable.getTableMap().values());
     ArrayList<Attribute> members = new ArrayList<>();
 

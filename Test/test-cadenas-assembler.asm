@@ -16,6 +16,7 @@ printf PROTO C :PTR BYTE, :VARARG
 .stack 200h
 .data
 
+	_float_aux_print_ DQ 0
 	_current_function_ DD 0
 	_max_float_value_ DD 3.40282347e+38
 	SumOverflowErrorMsg DB "Overflow detected in a INTEGER SUM operation", 10, 0
@@ -24,11 +25,22 @@ printf PROTO C :PTR BYTE, :VARARG
 
 	s__soy_una_CADENA_ DB " soy una CADENA ", 10, 0
 	k_global DD ?
+	c_3_us DB 3
 	c_6_l DD 6
+	@aux1 DD ?
 	c_8_us DB 8
 
 .code
 start:
+
+	MOV EAX, c_6_l
+	MOVZX ECX, c_3_us
+	ADD EAX, ECX
+	MOV @aux1, EAX
+	JO _SumOverflowError_
+
+	MOV EAX, @aux1
+	MOV k_global,EAX
 
 	invoke StdOut, addr s__soy_una_CADENA_
 
