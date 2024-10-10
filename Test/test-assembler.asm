@@ -37,7 +37,7 @@ printf PROTO C :PTR BYTE, :VARARG
 	@aux3 DD ?
 	@aux2 DD ?
 	c_1_l DD 1
-	@aux1 DD ?
+	@aux1 DB ?
 	newc_global_clase_updatec DD ?
 	newb_global_clase_updateb DD ?
 	c_20_us DB 20
@@ -61,11 +61,16 @@ start:
 	FSTP div_global
 
 	MOV AL, c_20_us
+	ADD AL, c_10_us
+	MOV @aux1, AL
+	JC _SumOverflowError_
+
+	MOV AL, @aux1
 	MOV a_global_clase_object_global,AL
 
 	invoke StdOut, addr s__VALOR_DE_a_
 
-	invoke printf, cfm$("%hu\n"), c_20_us
+	invoke printf, cfm$("%hu\n"), a_global_clase_object_global
 
 	MOV EAX, OFFSET FUNCTION_convert2ten_global_parent
 	CMP EAX, _current_function_
@@ -147,8 +152,8 @@ FUNCTION_convert2ten_global_parent PROC
 	MOV EAX, newp_global_parent_convert2ten
 	MOVZX ECX, BYTE PTR c_1_us
 	SUB EAX, ECX
-	MOV @aux1, EAX
-	MOV EAX, @aux1
+	MOV @aux2, EAX
+	MOV EAX, @aux2
 	MOV newp_global_parent_convert2ten,EAX
 
 	JMP label3
@@ -165,10 +170,10 @@ FUNCTION_convert2ten_global_parent PROC
 
 	MOV EAX, newp_global_parent_convert2ten
 	ADD EAX, c_1_l
-	MOV @aux2, EAX
+	MOV @aux3, EAX
 	JO _SumOverflowError_
 
-	MOV EAX, @aux2
+	MOV EAX, @aux3
 	MOV newp_global_parent_convert2ten,EAX
 
 	JMP label6
@@ -214,8 +219,8 @@ FUNCTION_updatec_global_clase PROC
 	MOV DWORD PTR [ESP-4], EAX
 	FILD DWORD PTR [ESP-4]
 	FADD
-	FSTP @aux3
-	FLD @aux3
+	FSTP @aux4
+	FLD @aux4
 	FSTP c_global_clase
 
 	MOV _current_function_, 0
@@ -224,10 +229,6 @@ FUNCTION_updatec_global_clase ENDP
 
 FUNCTION_printhalf_global PROC
 	FLD a_global_printhalf
-	FLD div_global
-	FDIV
-	FSTP @aux4
-	FLD @aux4
 	FSTP half_global_printhalf
 
 	FLD half_global_printhalf

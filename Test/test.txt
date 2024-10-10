@@ -52,7 +52,7 @@
 
 	VOID printhalf(FLOAT a) {
 	    FLOAT half,
-	    half = a / div,
+	    half = a,
 	    PRINT half,
 	    RETURN,
 	},
@@ -61,7 +61,7 @@
 	clase object,
 
     *{ Asigno valores a miembro de la clase }*
-    object.a = 20_us,
+    object.a = 20_us + 10_us,
     PRINT # VALOR DE a #,
     PRINT object.a,
 
