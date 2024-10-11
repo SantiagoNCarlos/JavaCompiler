@@ -60,14 +60,14 @@ public class MulConstructor implements CodeConstructor {
 
                 // Multiply and check for overflow
                 returnCode.append("\tFMUL\n")
-                        .append("\tFLD ST(0)\n")
-                        .append("\tFABS\n")
-                        .append("\tFCOM _max_float_value_\n")
-                        .append("\tFSTSW AX\n")
-                        .append("\tSAHF\n")
-                        .append("\tJA _ProductOverflowError_\n")
-                        .append("\tFXCH\n")
-                        .append("\tFSTP ").append(auxVariableName);
+                        .append("\tFLD ST(0)\n") // Duplicate the result (ST(0) is now also in ST(1))
+                        .append("\tFABS\n") // Take the absolute value of the result in ST(0)
+                        .append("\tFCOM _max_float_value_\n") // Compare result with max float value (ST remains the same)
+                        .append("\tFSTSW AX\n") // Store FPU status word in AX
+                        .append("\tSAHF\n") // Transfer condition codes to CPU flags
+                        .append("\tJA _ProductOverflowError_\n") // Jump if result > max_float_reg (overflow)
+                        .append("\tFXCH\n") // Exchange ST(0) with ST(1). ST(1) has the original result!
+                        .append("\tFSTP ").append(auxVariableName); // Store the 32 bit FP mul in auxiliar variable. Also pop the stack
             }
         }
 

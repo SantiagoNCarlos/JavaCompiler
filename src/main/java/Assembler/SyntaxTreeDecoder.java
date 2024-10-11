@@ -24,11 +24,11 @@ public class SyntaxTreeDecoder {
 
                 switch (parts[0].toLowerCase()) {
                     case "if" -> {
-                        CodeGenerator.enviromentCountStack.push(false);
+                        CodeGenerator.enviromentCountStack.push(false); // Only one branch
                     }
                     case "camino" -> {
                         CodeGenerator.enviromentCountStack.pop();
-                        CodeGenerator.enviromentCountStack.push(true);
+                        CodeGenerator.enviromentCountStack.push(true); // We have an else statement
                     }
                     case "declaracionfuncion" -> {
                         final String funcName = parts.length > 1 ? parts[1] : "";
